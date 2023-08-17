@@ -1,3 +1,4 @@
+const BASE_URL = "http://localhost:3000";
 const API_URL = "https://api.themoviedb.org/3/";
 const Header = {
   accept: "application/json",
@@ -21,4 +22,5 @@ module.exports = {
   options,
   IMAGE_URL,
   MOBILE_IMAGE_URL,
+  BASE_URL,
 };
