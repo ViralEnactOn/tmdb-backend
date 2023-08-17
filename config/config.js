@@ -16,6 +16,8 @@ const options = {
 
 const IMAGE_URL = "https://www.themoviedb.org/t/p/original";
 const MOBILE_IMAGE_URL = "https://image.tmdb.org/t/p/w260_and_h390_bestv2";
+const secretKey = "tmdb-secret-key";
+
 module.exports = {
   API_URL,
   Header,
@@ -23,4 +25,5 @@ module.exports = {
   IMAGE_URL,
   MOBILE_IMAGE_URL,
   BASE_URL,
+  secretKey,
 };
