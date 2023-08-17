@@ -7,8 +7,7 @@ const bcrypt = require("bcryptjs");
 const crypto = import("crypto");
 const jwt = require("jsonwebtoken");
 const path = require("path");
-const { response } = require("express");
-
+const { default: jwtDecode } = require("jwt-decode");
 const get_movie_list = async (req, res) => {
   try {
     await db
@@ -104,14 +103,18 @@ const register_user = async (req, res) => {
         .then(async (response) => {
           await db("user")
             .where({ email: email })
+            .first()
             .then(async (responseData) => {
-              const data = responseData[0];
-              const message = `${BASE_URL}/user/verify/${data.id}/${data.token}`;
-              await sendEmail.sendEmail(data.email, "Verify Email", message);
+              const message = `${BASE_URL}/user/verify/${responseData.id}/${responseData.token}`;
+              await sendEmail.sendEmail(
+                responseData.email,
+                "Verify Email",
+                message
+              );
               res.send({
                 status: StatusCodes.OK,
                 message: ReasonPhrases.OK,
-                data: ` A verification email has been sent to ${data.email}`,
+                data: ` A verification email has been sent to ${responseData.email}`,
               });
             });
         })
@@ -223,14 +226,19 @@ const forgot_password = async (req, res) => {
         await db("user")
           .where({ email: email })
           .where({ isVerified: true })
+          .first()
           .then(async (responseData) => {
-            const data = responseData[0];
-            const message = `${BASE_URL}/user/reset_password/id=${data.id}/token=${data.token}`;
-            await sendEmail.forgotEmail(data.email, "Forgot Password", message);
+            console.log(responseData.id);
+            const message = `${BASE_URL}/user/reset_password/id=${responseData.id}/token=${responseData.token}`;
+            await sendEmail.forgotEmail(
+              responseData.email,
+              "Forgot Password",
+              message
+            );
             res.send({
               status: StatusCodes.OK,
               message: ReasonPhrases.OK,
-              data: ` A forgot password email has been sent to ${data.email}`,
+              data: ` A forgot password email has been sent to ${responseData.email}`,
             });
           });
       });
@@ -276,12 +284,12 @@ const reset_password = async (req, res) => {
         await db("user")
           .where({ id: id })
           .where({ token: token })
+          .first()
           .then((responseData) => {
-            let data = responseData[0];
             res.send({
               status: StatusCodes.OK,
               message: ReasonPhrases.OK,
-              data: `The password for this ${data.email} has been successfully changed.`,
+              data: `The password for this ${responseData.email} has been successfully changed.`,
             });
           });
       })
@@ -301,6 +309,12 @@ const reset_password = async (req, res) => {
   }
 };
 
+const insert_watch_list = async (req, res) => {
+  const { token } = req.body;
+  let decode = jwtDecode(token);
+  console.log(decode.name);
+};
+
 module.exports = {
   get_movie_list,
   get_movie,
@@ -310,4 +324,5 @@ module.exports = {
   render_reset_password_template,
   forgot_password,
   reset_password,
+  insert_watch_list,
 };

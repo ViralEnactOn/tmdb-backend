@@ -14,5 +14,6 @@ router.get(
   tmdbController.render_reset_password_template
 );
 router.post("/user/reset_password", tmdbController.reset_password);
+router.post("/user/insert_watch_list", tmdbController.insert_watch_list);
 
 module.exports = router;
