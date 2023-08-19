@@ -22,8 +22,9 @@ const movieSchema = db.schema.createTable("movie", (table) => {
   table.string("revenue");
   table.integer("runtime");
   table.string("status");
-
   table.json("external_ids");
+  table.timestamp("created_at").defaultTo(db.fn.now());
+  table.timestamp("updated_at").defaultTo(db.fn.now());
 });
 
 module.exports = { movieSchema };

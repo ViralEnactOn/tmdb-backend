@@ -7,6 +7,8 @@ const watchlistSchema = db.schema.createTable("user_watch_list", (table) => {
   table.foreign("user_id").references("user.id");
   table.json("movies");
   table.boolean("isPublic");
+  table.timestamp("created_at").defaultTo(db.fn.now());
+  table.timestamp("updated_at").defaultTo(db.fn.now());
 });
 
 module.exports = { watchlistSchema };

@@ -28,7 +28,7 @@ router.post(
   tmdbController.insert_movie_watch_list
 );
 router.get(
-  "/user/fetch_movie_watch_list/:watch_list_id/:isPublic/:user_id",
+  "/user/fetch_movie_watch_list/watch_list_id=:watch_list_id/isPublic=:isPublic/user_id=:user_id",
   tmdbController.fetch_movie_watch_list
 );
 router.post(
@@ -43,11 +43,7 @@ router.post("/user/insert_favorite", tmdbController.insert_favorite);
 router.post("/user/fetch_favorite_list", tmdbController.fetch_favorite_list);
 router.post("/user/delete_favorite_list", tmdbController.delete_favorite_list);
 router.post("/user/nested_comment", tmdbController.nested_comment);
-
-
-
-
-
-
+router.post("/user/movie_chart", tmdbController.movie_chart);
+router.post("/user/movie_profit_loss", tmdbController.movie_profit_loss);
 
 module.exports = router;

@@ -726,6 +726,7 @@ const like_movie = async (req, res) => {
 
 const insert_favorite = async (req, res) => {
   const { token, type, items } = req.body;
+  console.log({ token, type, items });
   let decode = jwtDecode(token);
   try {
     db("user_favorite_movie")
@@ -734,7 +735,7 @@ const insert_favorite = async (req, res) => {
       .then((response) => {
         console.log(response);
         let existingMovies =
-          response.items !== "[null]" ? JSON.parse(response.items) : [];
+          response.items !== null ? JSON.parse(response.items) : [];
         existingMovies.push(items);
         console.log({ existingMovies });
         return db("user_favorite_movie")
@@ -945,6 +946,81 @@ const nested_comment = async (req, res) => {
   }
 };
 
+const movie_chart = async (req, res) => {
+  const { genres_id } = req.body;
+  const currentDate = new Date();
+  const threeYearsAgo = new Date(
+    currentDate.getFullYear() - 3,
+    currentDate.getMonth(),
+    currentDate.getDate()
+  );
+  try {
+    db("movie")
+      .select(
+        db.raw(
+          "YEAR(release_date) as year, WEEK(release_date) as week, COUNT(*) as movie_count"
+        )
+      )
+      // .whereRaw(`FIND_IN_SET(${genres_id}, genre_ids)`)
+      // .whereIn(
+      //   db.raw('JSON_UNQUOTE(JSON_EXTRACT(genre_ids, "$[*]"))'),
+      //   genres_id
+      // )
+      .where("release_date", ">=", threeYearsAgo)
+      .groupBy(db.raw("YEAR(release_date), WEEK(release_date)"))
+      .orderBy(db.raw("YEAR(release_date), WEEK(release_date)"))
+      .then((releaseCounts) => {
+        res.send({
+          status: StatusCodes.OK,
+          message: ReasonPhrases.OK,
+          data: releaseCounts,
+        });
+      })
+      .catch((error) => {
+        res.send({
+          status: StatusCodes.INTERNAL_SERVER_ERROR,
+          message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        });
+      });
+  } catch (error) {
+    res.send({
+      status: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+      error: error.message,
+    });
+  }
+};
+
+const movie_profit_loss = (req, res) => {
+  try {
+    db("movie")
+      .select(
+        "id",
+        "title",
+        "budget",
+        "revenue",
+        db.raw("(revenue - budget) as profit_loss"),
+        db.raw(
+          'CASE WHEN revenue > budget THEN "Profit" ELSE "Loss" END as result'
+        )
+      )
+      .then((profitLossSummary) => {
+        res.send({
+          status: StatusCodes.OK,
+          message: ReasonPhrases.OK,
+          data: profitLossSummary,
+        });
+      });
+  } catch (error) {
+    res.send({
+      status: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   get_movie_list,
   get_movie,
@@ -968,4 +1044,6 @@ module.exports = {
   fetch_favorite_list,
   delete_favorite_list,
   nested_comment,
+  movie_chart,
+  movie_profit_loss,
 };

@@ -43,6 +43,8 @@ const fetchAllRecord = async () => {
     try {
       let page = 1;
       let combinedRecords = [];
+
+      let insertedCount = 0;
       while (true) {
         const data = await fetchData(page);
         const combinedData = await Promise.all(
@@ -56,10 +58,11 @@ const fetchAllRecord = async () => {
             };
           })
         );
-        if (page === 11) {
+        if (page === 101) {
           break;
         }
         combinedRecords.push(...combinedData);
+        console.log("Total Records", combinedRecords.length);
         page++;
       }
 
@@ -87,10 +90,18 @@ const fetchAllRecord = async () => {
           status: item.detail.status,
           external_ids: item.external_ids,
         });
+        insertedCount++;
+        const totalRecords = combinedRecords.length;
+        if (insertedCount % 100 === 0 || insertedCount === totalRecords) {
+          const recordsLeft = totalRecords - insertedCount;
+          console.log(
+            `Inserted ${insertedCount} records. ${recordsLeft} records left.`
+          );
+        }
       });
       await Promise.all(insertPromises);
       const insertedData = await db.from("movie");
-      console.log("Record Inserted", insertedData.length);
+      console.log("Record Inserted Successfully");
     } catch (error) {
       console.log("Catch error", error);
     }

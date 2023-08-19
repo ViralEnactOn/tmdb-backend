@@ -8,6 +8,8 @@ const userFavoriteMovieSchema = db.schema.createTable(
     table.json("items");
     table.integer("user_id").unsigned(); // Adding foreign key column
     table.foreign("user_id").references("user.id");
+    table.timestamp("created_at").defaultTo(db.fn.now());
+    table.timestamp("updated_at").defaultTo(db.fn.now());
   }
 );
 
