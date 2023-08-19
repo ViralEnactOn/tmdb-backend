@@ -4,28 +4,26 @@ const { userSchema } = require("../models/userModel");
 const { BASE_URL, secretKey } = require("../config/config");
 const sendEmail = require("../config/sendMail");
 const bcrypt = require("bcryptjs");
-const crypto = import("crypto");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const { default: jwtDecode } = require("jwt-decode");
-const { exists } = require("fs");
 const { watchlistSchema } = require("../models/userWatchListModel");
 const { likeMovieSchema } = require("../models/likeMovieModel");
 const { commentMovieSchema } = require("../models/commentMovieModel");
 const { userFavoriteMovieSchema } = require("../models/userFavoriteMovieModel");
-const get_movie_list = async (req, res) => {
+const get_movie_list = async (req, reply) => {
   try {
     await db
       .from("movie")
       .then((response) => {
-        res.send({
+        reply.send({
           status: StatusCodes.OK,
           message: ReasonPhrases.OK,
           data: response,
         });
       })
       .catch((error) => {
-        res.send({
+        reply.send({
           status: StatusCodes.INTERNAL_SERVER_ERROR,
           message: ReasonPhrases.INTERNAL_SERVER_ERROR,
           error: error,
@@ -36,7 +34,7 @@ const get_movie_list = async (req, res) => {
   }
 };
 
-const get_movie = async (req, res) => {
+const get_movie = async (req, reply) => {
   try {
     const { page } = req.query;
     const limit = 20;
@@ -45,14 +43,14 @@ const get_movie = async (req, res) => {
       .offset(page === 1 ? 0 : page * limit)
       .limit(limit)
       .then((response) => {
-        res.send({
+        reply.send({
           status: StatusCodes.OK,
           message: ReasonPhrases.OK,
           data: response,
         });
       })
       .catch((error) => {
-        res.send({
+        reply.send({
           status: StatusCodes.INTERNAL_SERVER_ERROR,
           message: ReasonPhrases.INTERNAL_SERVER_ERROR,
           error: error,
@@ -63,151 +61,129 @@ const get_movie = async (req, res) => {
   }
 };
 
-const register_user = async (req, res) => {
+const register_user = async (req, reply) => {
   const { name, email, password } = req.body;
-  let hashedPassword = await encryptPassword(password);
-  db.schema.hasTable("user").then(async (exists) => {
-    if (!exists) {
-      await userSchema.then(async (response) => {
-        await user();
-      });
-    } else {
-      await user();
-    }
-  });
-  const token = jwt.sign(
-    { email: email },
-    secretKey
-    // {
-    //   expiresIn: "2h",
-    // }
-  );
 
-  // Main Function
-  const user = async () => {
-    try {
-      // Check user exists or not
-      let userData = await db("user").where({ email: email });
-      if (userData.length !== 0) {
-        return res.send({
-          status: StatusCodes.BAD_REQUEST,
-          message: `User with given email already exist!`,
-        });
-      }
-
-      // If not then insert user
-      userData = await db("user")
-        .insert({
-          name: name,
-          email: email,
-          password: hashedPassword,
-          isVerified: false,
-          // token: (await crypto).randomBytes(32).toString("hex"),
-          token: token,
-        })
-        .then(async (response) => {
-          await db("user")
-            .where({ email: email })
-            .first()
-            .then(async (responseData) => {
-              const message = `${BASE_URL}/user/verify/${responseData.id}/${responseData.token}`;
-              await sendEmail.sendEmail(
-                responseData.email,
-                "Verify Email",
-                message
-              );
-              res.send({
-                status: StatusCodes.OK,
-                message: ReasonPhrases.OK,
-                data: ` A verification email has been sent to ${responseData.email}`,
-              });
-            });
-        })
-        .catch((error) => {
-          res.send({
-            status: StatusCodes.INTERNAL_SERVER_ERROR,
-            message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-            error: error,
-          });
-        });
-    } catch (error) {
-      res.send({
-        status: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-        error: error,
-      });
-    }
-  };
-};
-
-const validate_user = async (req, res) => {
-  const { id, token } = req.params;
   try {
-    const user = await db("user")
-      .where({
-        id: id,
-      })
-      .where({
-        token: token,
-      });
-    if (user.length === 0) {
-      return res.send({
+    const hashedPassword = await encryptPassword(password);
+    const token = jwt.sign({ email: email }, secretKey);
+
+    // Check if the "user" table exists in the database
+    const exists = await db.schema.hasTable("user");
+
+    if (!exists) {
+      // If the "user" table doesn't exist, create it
+      await userSchema;
+    }
+
+    // Check if a user with the given email already exists
+    const userData = await db("user").where({ email: email });
+
+    if (userData.length !== 0) {
+      return reply.send({
         status: StatusCodes.BAD_REQUEST,
-        message: `Invalid link`,
+        message: `User with the given email already exists!`,
       });
     }
 
-    await db("user")
-      .where({ id: id })
-      .update({ isVerified: true, token: "" })
-      .then((response) => {
-        db.schema.hasTable("user_favorite_movie").then(async (exists) => {
-          if (!exists) {
-            await userFavoriteMovieSchema.then(async (response) => {
-              await insertFavorite();
-            });
-          } else {
-            await insertFavorite();
-          }
-        });
-      });
+    // Insert the user data into the "user" table
+    const insertedUserIds = await db("user").insert({
+      name: name,
+      email: email,
+      password: hashedPassword,
+      isVerified: false,
+      token: token,
+    });
 
-    const insertFavorite = async () => {
-      try {
-        await db("user_favorite_movie")
-          .insert({
-            user_id: id,
-          })
-          .then((responseData) => {
-            res
-              .send({
-                status: StatusCodes.OK,
-                message: ReasonPhrases.OK,
-                data: `Email has been verified `,
-              })
-              .catch((error) => {
-                res.send({
-                  status: StatusCodes.INTERNAL_SERVER_ERROR,
-                  message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-                  error: error,
-                });
-              });
-          });
-      } catch (error) {
-        res.send({
-          status: StatusCodes.INTERNAL_SERVER_ERROR,
-          message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-          error: error,
-        });
-      }
-    };
+    const insertedUserId = insertedUserIds[0]; // Assuming user IDs are auto-incremented
+
+    const verificationLink = `${BASE_URL}/user/verify/${insertedUserId}/${token}`;
+
+    // Send a verification email
+    await sendEmail.sendEmail(email, "Verify Email", verificationLink);
+
+    reply.send({
+      status: StatusCodes.OK,
+      message: ReasonPhrases.OK,
+      data: `A verification email has been sent to ${email}`,
+    });
   } catch (error) {
-    res.send({
+    reply.send({
       status: StatusCodes.INTERNAL_SERVER_ERROR,
       message: ReasonPhrases.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
+};
+
+const validate_user = async (req, reply) => {
+  const { id, token } = req.params;
+  // try {
+  //   const user = await db("user")
+  //     .where({
+  //       id: id,
+  //     })
+  //     .where({
+  //       token: token,
+  //     });
+  //   if (user.length === 0) {
+  //     return reply.send({
+  //       status: StatusCodes.BAD_REQUEST,
+  //       message: `Invalid link`,
+  //     });
+  //   }
+
+  //   await db("user")
+  //     .where({ id: id })
+  //     .update({ isVerified: true, token: "" })
+  //     .then((response) => {
+  //       db.schema.hasTable("user_favorite_movie").then(async (exists) => {
+  //         if (!exists) {
+  //           await userFavoriteMovieSchema.then(async (response) => {
+  //             await insertFavorite();
+  //           });
+  //         } else {
+  //           await insertFavorite();
+  //         }
+  //       });
+  //     });
+
+  //   const insertFavorite = async () => {
+  //     try {
+  //       await db("user_favorite_movie")
+  //         .insert({
+  //           user_id: id,
+  //         })
+  //         .then((responseData) => {
+  //           reply
+  //             .send({
+  //               status: StatusCodes.OK,
+  //               message: ReasonPhrases.OK,
+  //               data: `Email has been verified `,
+  //             })
+  //             .catch((error) => {
+  //               reply.send({
+  //                 status: StatusCodes.INTERNAL_SERVER_ERROR,
+  //                 message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+  //                 error: error,
+  //               });
+  //             });
+  //         });
+  //     } catch (error) {
+  //       reply.send({
+  //         status: StatusCodes.INTERNAL_SERVER_ERROR,
+  //         message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+  //         error: error,
+  //       });
+  //     }
+  //   };
+  // } catch (error) {
+  //   reply.send({
+  //     status: StatusCodes.INTERNAL_SERVER_ERROR,
+  //     message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+  //     error: error,
+  //   });
+  // }
 };
 
 const login_user = async (req, res) => {
@@ -542,7 +518,7 @@ const insert_movie_watch_list = async (req, res) => {
 
 // Perfect
 // For public and private
-const fetch_movie_watch_list = async (req, res) => {
+const fetch_movie_watch_list = async (req, reply) => {
   const { watch_list_id, isPublic, user_id } = req.params;
   let watch_list = [];
   try {
@@ -563,27 +539,27 @@ const fetch_movie_watch_list = async (req, res) => {
       })
       .then((movieDetails) => {
         if (movieDetails.length > 0) {
-          res.send({
+          reply.send({
             status: StatusCodes.OK,
             message: ReasonPhrases.OK,
             data: { watchlist: watch_list, movieDetails: movieDetails },
           });
         } else {
-          res.send({
+          reply.send({
             status: StatusCodes.OK,
             message: "No movie details found for the given movie IDs.",
           });
         }
       })
       .catch((error) => {
-        res.send({
+        reply.send({
           status: StatusCodes.INTERNAL_SERVER_ERROR,
           message: ReasonPhrases.INTERNAL_SERVER_ERROR,
           error: error.message,
         });
       });
   } catch (error) {
-    res.send({
+    reply.send({
       status: StatusCodes.INTERNAL_SERVER_ERROR,
       message: ReasonPhrases.INTERNAL_SERVER_ERROR,
       error: error.message,
