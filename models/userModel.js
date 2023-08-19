@@ -8,7 +8,7 @@ const userSchema = db.schema.createTable("user", (table) => {
   table.boolean("isVerified");
   table.string("token");
   table.timestamp("created_at").defaultTo(db.fn.now());
-  table.timestamp("").defaultTo(db.fn.now());
+  table.timestamp("updated_at").defaultTo(db.fn.now());
 });
 
 module.exports = { userSchema };
