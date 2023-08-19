@@ -267,7 +267,6 @@ const forgot_password = async (req, res) => {
           .where({ isVerified: true })
           .first()
           .then(async (responseData) => {
-            console.log(responseData.id);
             const message = `${BASE_URL}/user/reset_password/id=${responseData.id}/token=${responseData.token}`;
             await sendEmail.forgotEmail(
               responseData.email,
@@ -308,18 +307,15 @@ const encryptPassword = async (password) => {
 const reset_password = async (req, res) => {
   try {
     const { password, token, id } = req.body;
-    console.log(req.body);
 
     // Encrypt the password before proceeding
     let hashedPassword = await encryptPassword(password);
 
-    console.log({ hashedPassword });
     await db("user")
       .where({ id: id })
       .where({ token: token })
       .update({ password: hashedPassword, token: "" })
       .then(async (response) => {
-        console.log({ response });
         await db("user")
           .where({ id: id })
           .where({ token: token })
@@ -443,7 +439,7 @@ const update_watch_list = async (req, res) => {
     await db("user_watch_list")
       .where({ id: id })
       .where({ user_id: decode.id })
-      .update({ name: name, isPublic: isPublic })
+      .update({ name: name, isPublic: isPublic, updated_at: db.fn.now() })
       .then((response) => {
         res.send({
           status: StatusCodes.OK,
@@ -516,7 +512,10 @@ const insert_movie_watch_list = async (req, res) => {
         return db("user_watch_list")
           .where({ id: id })
           .where({ user_id: decode.id })
-          .update({ movies: JSON.stringify(existingMovies) });
+          .update({
+            movies: JSON.stringify(existingMovies),
+            updated_at: db.fn.now(),
+          });
       })
       .then((updateResult) => {
         res.send({
@@ -726,23 +725,21 @@ const like_movie = async (req, res) => {
 
 const insert_favorite = async (req, res) => {
   const { token, type, items } = req.body;
-  console.log({ token, type, items });
   let decode = jwtDecode(token);
   try {
     db("user_favorite_movie")
       .where({ user_id: decode.id })
       .first()
       .then((response) => {
-        console.log(response);
         let existingMovies =
           response.items !== null ? JSON.parse(response.items) : [];
         existingMovies.push(items);
-        console.log({ existingMovies });
         return db("user_favorite_movie")
           .where({ user_id: decode.id })
           .update({
             type: type,
             items: JSON.stringify(existingMovies),
+            updated_at: db.fn.now(),
           })
           .then((updateResult) => {
             res.send({
@@ -818,7 +815,6 @@ const fetch_favorite_list = async (req, res) => {
 
 const delete_favorite_list = async (req, res) => {
   const { token, favorite_list_id } = req.body;
-  console.log({ favorite_list_id });
   let decode = jwtDecode(token);
   try {
     await db
