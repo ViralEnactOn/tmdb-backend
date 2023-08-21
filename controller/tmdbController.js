@@ -116,73 +116,45 @@ const register_user = async (req, reply) => {
   }
 };
 
-// Not working
 const validate_user = async (req, reply) => {
   const { id, token } = req.params;
+
   try {
     const user = await db("user")
       .where({
         id: id,
-      })
-      .where({
         token: token,
-      });
-    if (user.length === 0) {
+      })
+      .first();
+
+    if (!user) {
       return reply.send({
         status: StatusCodes.BAD_REQUEST,
         message: `Invalid link`,
       });
     }
 
-    await db("user")
-      .where({ id: id })
-      .update({ isVerified: true, token: "" })
-      .then((response) => {
-        db.schema.hasTable("user_favorite_movie").then(async (exists) => {
-          if (!exists) {
-            await userFavoriteMovieSchema.then(async (response) => {
-              await insertFavorite();
-            });
-          } else {
-            await insertFavorite();
-          }
-        });
-      });
+    await db("user").where({ id: id }).update({ isVerified: true, token: "" });
 
-    const insertFavorite = async () => {
-      try {
-        await db("user_favorite_movie")
-          .insert({
-            user_id: id,
-          })
-          .then((responseData) => {
-            reply
-              .send({
-                status: StatusCodes.OK,
-                message: ReasonPhrases.OK,
-                data: `Email has been verified `,
-              })
-              .catch((error) => {
-                reply.send({
-                  status: StatusCodes.INTERNAL_SERVER_ERROR,
-                  message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-                  error: error,
-                });
-              });
-          });
-      } catch (error) {
-        reply.send({
-          status: StatusCodes.INTERNAL_SERVER_ERROR,
-          message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-          error: error,
-        });
-      }
-    };
+    const exists = await db.schema.hasTable("user_favorite_movie");
+    if (!exists) {
+      await userFavoriteMovieSchema;
+    }
+
+    await db("user_favorite_movie").insert({
+      user_id: id,
+    });
+
+    reply.send({
+      status: StatusCodes.OK,
+      message: ReasonPhrases.OK,
+      data: `Email has been verified`,
+    });
   } catch (error) {
     reply.send({
       status: StatusCodes.INTERNAL_SERVER_ERROR,
       message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error: error,
+      error: error.message,
     });
   }
 };
@@ -277,7 +249,7 @@ const forgot_password = async (req, reply) => {
 
 // Not Working
 const render_reset_password_template = (req, reply) => {
-  return reply.sendFile(path.resolve("./public/reset-password.html"));
+  return reply.sendFile("reset-password.html");
 };
 
 const encryptPassword = async (password) => {
@@ -292,6 +264,7 @@ const encryptPassword = async (password) => {
 };
 
 const reset_password = async (req, reply) => {
+  console.log(req.body);
   try {
     const { password, token, id } = req.body;
     let decode = jwtDecode(token);
