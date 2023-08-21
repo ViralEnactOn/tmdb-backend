@@ -1,9 +1,4 @@
-const {
-  API_URL,
-  options,
-  IMAGE_URL,
-  MOBILE_IMAGE_URL,
-} = require("../config/config");
+const config = require("../config/config");
 const db = require("../config/db");
 const { movieSchema } = require("../models/movieModel");
 
@@ -20,22 +15,23 @@ db.schema.hasTable("movie").then(async (exists) => {
 
 const fetchAllRecord = async () => {
   const fetchData = async (page) => {
-    const endPoint = `${API_URL}discover/movie?page=${page}`;
-    const response = await fetch(endPoint, options);
+    const endPoint = `${config.tmdb_service.api_url}discover/movie?page=${page}`;
+    const response = await fetch(endPoint, config.tmdb_service.options);
     const data = await response.json();
     return data.results;
   };
+  fetchData(1);
 
   const fetchDetailRecord = async (movieId) => {
-    const endPoint = `${API_URL}movie/${movieId}`;
-    const response = await fetch(endPoint, options);
+    const endPoint = `${config.tmdb_service.api_url}movie/${movieId}`;
+    const response = await fetch(endPoint, config.tmdb_service.options);
     const data = await response.json();
     return data;
   };
 
   const fetchExternalIdRecord = async (movieId) => {
-    const endPoint = `${API_URL}movie/${movieId}/external_ids`;
-    const response = await fetch(endPoint, options);
+    const endPoint = `${config.tmdb_service.api_url}movie/${movieId}/external_ids`;
+    const response = await fetch(endPoint, config.tmdb_service.options);
     const data = await response.json();
     return data;
   };
@@ -67,17 +63,26 @@ const fetchAllRecord = async () => {
       }
 
       const insertPromises = combinedRecords.map(async (item, index) => {
+        let production_countries = [];
+        let spoken_languages = [];
+        let newDetail = await item.detail.production_countries.map((data) => {
+          production_countries.push(data.iso_3166_1);
+        });
+        let spokenDetail = await item.detail.spoken_languages.map((data) => {
+          spoken_languages.push(data.iso_639_1);
+        });
         await db("movie").insert({
           id: item.id,
           adult: item.adult,
-          backdrop_path: IMAGE_URL + item.backdrop_path,
+          backdrop_path: config.tmdb_service.image_url + item.backdrop_path,
           genre_ids: JSON.stringify(item.genre_ids),
           original_language: item.original_language,
           original_title: item.original_title,
           overview: item.overview,
           popularity: item.popularity,
-          poster_path: IMAGE_URL + item.poster_path,
-          poster_path_mobile: MOBILE_IMAGE_URL + item.poster_path,
+          poster_path: config.tmdb_service.image_url + item.poster_path,
+          poster_path_mobile:
+            config.tmdb_service.mobile_image_url + item.poster_path,
           title: item.title,
           video: item.video,
           vote_average: item.vote_average,
@@ -88,6 +93,8 @@ const fetchAllRecord = async () => {
           revenue: item.detail.revenue,
           runtime: item.detail.runtime,
           status: item.detail.status,
+          production_countries: JSON.stringify(production_countries),
+          spoken_languages: JSON.stringify(spoken_languages),
           external_ids: item.external_ids,
         });
         insertedCount++;
@@ -108,3 +115,5 @@ const fetchAllRecord = async () => {
   };
   insertData();
 };
+
+fetchAllRecord();

@@ -23,6 +23,8 @@ const movieSchema = db.schema.createTable("movie", (table) => {
   table.integer("runtime");
   table.string("status");
   table.json("external_ids");
+  table.json("production_countries");
+  table.json("spoken_languages");
   table.timestamp("created_at").defaultTo(db.fn.now());
   table.timestamp("updated_at").defaultTo(db.fn.now());
 });

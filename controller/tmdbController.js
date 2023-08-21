@@ -1,14 +1,12 @@
 const db = require("../config/db");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { userSchema } = require("../models/userModel");
-const { BASE_URL, secretKey } = require("../config/config");
+const config = require("../config/config");
 const sendEmail = require("../config/sendMail");
 const bcrypt = require("bcryptjs");
-const crypto = import("crypto");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const { default: jwtDecode } = require("jwt-decode");
-const { exists } = require("fs");
 const { watchlistSchema } = require("../models/userWatchListModel");
 const { likeMovieSchema } = require("../models/likeMovieModel");
 const { commentMovieSchema } = require("../models/commentMovieModel");
@@ -75,13 +73,7 @@ const register_user = async (req, res) => {
       await user();
     }
   });
-  const token = jwt.sign(
-    { email: email },
-    secretKey
-    // {
-    //   expiresIn: "2h",
-    // }
-  );
+  const token = jwt.sign({ email: email }, config.jwt.secret_key);
 
   // Main Function
   const user = async () => {
@@ -102,7 +94,6 @@ const register_user = async (req, res) => {
           email: email,
           password: hashedPassword,
           isVerified: false,
-          // token: (await crypto).randomBytes(32).toString("hex"),
           token: token,
         })
         .then(async (response) => {
@@ -110,7 +101,7 @@ const register_user = async (req, res) => {
             .where({ email: email })
             .first()
             .then(async (responseData) => {
-              const message = `${BASE_URL}/user/verify/${responseData.id}/${responseData.token}`;
+              const message = `${config.app.base_url}/user/verify/${responseData.id}/${responseData.token}`;
               await sendEmail.sendEmail(
                 responseData.email,
                 "Verify Email",
@@ -228,10 +219,7 @@ const login_user = async (req, res) => {
     if (passwordMatches) {
       const token = jwt.sign(
         { id: user.id, email: user.email, name: user.name },
-        secretKey,
-        {
-          expiresIn: "2h",
-        }
+        config.jwt.secret_key
       );
       return res.send({
         status: StatusCodes.OK,
@@ -256,7 +244,7 @@ const login_user = async (req, res) => {
 const forgot_password = async (req, res) => {
   try {
     const { email } = req.body;
-    const token = jwt.sign({ email: email }, secretKey);
+    const token = jwt.sign({ email: email }, config.jwt.secret_key);
     await db("user")
       .where({ email: email })
       .where({ isVerified: true })
@@ -269,7 +257,7 @@ const forgot_password = async (req, res) => {
             .where({ isVerified: true })
             .first()
             .then(async (responseData) => {
-              const message = `${BASE_URL}/user/reset_password/id=${responseData.id}/token=${responseData.token}`;
+              const message = `${config.app.base_url}/user/reset_password/id=${responseData.id}/token=${responseData.token}`;
               await sendEmail.forgotEmail(
                 responseData.email,
                 "Forgot Password",
