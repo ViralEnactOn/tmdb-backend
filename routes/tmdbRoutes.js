@@ -45,5 +45,6 @@ router.post("/user/delete_favorite_list", tmdbController.delete_favorite_list);
 router.post("/user/nested_comment", tmdbController.nested_comment);
 router.post("/user/movie_chart", tmdbController.movie_chart);
 router.post("/user/movie_profit_loss", tmdbController.movie_profit_loss);
+router.post("/user/country_revenue", tmdbController.country_revenue);
 
 module.exports = router;

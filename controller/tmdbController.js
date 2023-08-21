@@ -1017,6 +1017,30 @@ const movie_profit_loss = (req, res) => {
   }
 };
 
+const country_revenue = async (req, res) => {
+  try {
+    const { country } = req.body;
+    db("movie")
+      .sum("revenue as total_revenue")
+      .whereRaw(`JSON_CONTAINS(production_countries, ?)`, [`["${country}"]`])
+      .then((movies) => {
+        res.send({
+          status: StatusCodes.OK,
+          message: ReasonPhrases.OK,
+          data: movies,
+        });
+      });
+  } catch (error) {
+    res.send({
+      status: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: ReasonPhrases.INTERNAL_SERVER_ERROR,
+      error: error.message,
+    });
+  }
+};
+
+// i want to pass country in req.body
+
 module.exports = {
   get_movie_list,
   get_movie,
@@ -1042,4 +1066,5 @@ module.exports = {
   nested_comment,
   movie_chart,
   movie_profit_loss,
+  country_revenue,
 };

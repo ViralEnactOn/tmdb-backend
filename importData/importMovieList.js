@@ -20,7 +20,6 @@ const fetchAllRecord = async () => {
     const data = await response.json();
     return data.results;
   };
-  fetchData(1);
 
   const fetchDetailRecord = async (movieId) => {
     const endPoint = `${config.tmdb_service.api_url}movie/${movieId}`;
@@ -115,5 +114,3 @@ const fetchAllRecord = async () => {
   };
   insertData();
 };
-
-fetchAllRecord();
