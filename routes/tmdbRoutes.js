@@ -12,7 +12,7 @@ const itemRoutes = (fastify, options, done) => {
   fastify.post("/login", tmdbController.login_user);
   fastify.post("/user/forgot_password", tmdbController.forgot_password);
   fastify.get(
-    "/user/reset_password/:id/:token",
+    "/user/reset_password/id=:id/token=:token",
     tmdbController.render_reset_password_template
   );
   fastify.post("/user/reset_password", tmdbController.reset_password);
