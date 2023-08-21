@@ -863,11 +863,13 @@ const movie_chart = async (req, reply) => {
           "YEAR(release_date) as year, WEEK(release_date) as week, COUNT(*) as movie_count"
         )
       )
-      // .whereRaw(`FIND_IN_SET(${genres_id}, genre_ids)`)
-      // .whereIn(
-      //   db.raw('JSON_UNQUOTE(JSON_EXTRACT(genre_ids, "$[*]"))'),
-      //   genres_id
-      // )
+      .where(function () {
+        for (const genreId of genres_id) {
+          this.where(
+            db.raw(`JSON_SEARCH(genre_ids, 'one', ?) IS NOT NULL`, genreId)
+          );
+        }
+      })
       .where("release_date", ">=", threeYearsAgo)
       .groupBy(db.raw("YEAR(release_date), WEEK(release_date)"))
       .orderBy(db.raw("YEAR(release_date), WEEK(release_date)"));
