@@ -262,23 +262,32 @@ const forgot_password = async (req, res) => {
       .where({ isVerified: true })
       .update({ token: token })
       .then(async (response) => {
-        await db("user")
-          .where({ email: email })
-          .where({ isVerified: true })
-          .first()
-          .then(async (responseData) => {
-            const message = `${BASE_URL}/user/reset_password/id=${responseData.id}/token=${responseData.token}`;
-            await sendEmail.forgotEmail(
-              responseData.email,
-              "Forgot Password",
-              message
-            );
-            res.send({
-              status: StatusCodes.OK,
-              message: ReasonPhrases.OK,
-              data: ` A forgot password email has been sent to ${responseData.email}`,
+        console.log(response);
+        if (response === 1) {
+          await db("user")
+            .where({ email: email })
+            .where({ isVerified: true })
+            .first()
+            .then(async (responseData) => {
+              const message = `${BASE_URL}/user/reset_password/id=${responseData.id}/token=${responseData.token}`;
+              await sendEmail.forgotEmail(
+                responseData.email,
+                "Forgot Password",
+                message
+              );
+              res.send({
+                status: StatusCodes.OK,
+                message: ReasonPhrases.OK,
+                data: ` A forgot password email has been sent to ${responseData.email}`,
+              });
             });
+        } else {
+          res.send({
+            status: StatusCodes.OK,
+            message: ReasonPhrases.OK,
+            data: `This ${email} is not exists`,
           });
+        }
       });
   } catch (error) {
     res.send({
@@ -307,6 +316,7 @@ const encryptPassword = async (password) => {
 const reset_password = async (req, res) => {
   try {
     const { password, token, id } = req.body;
+    let decode = jwtDecode(token);
 
     // Encrypt the password before proceeding
     let hashedPassword = await encryptPassword(password);
@@ -316,23 +326,25 @@ const reset_password = async (req, res) => {
       .where({ token: token })
       .update({ password: hashedPassword, token: "" })
       .then(async (response) => {
-        await db("user")
-          .where({ id: id })
-          .where({ token: token })
-          .first()
-          .then((responseData) => {
-            res.send({
-              status: StatusCodes.OK,
-              message: ReasonPhrases.OK,
-              data: `The password for this ${responseData.email} has been successfully changed.`,
-            });
+        if (response !== 0) {
+          res.send({
+            status: StatusCodes.OK,
+            message: ReasonPhrases.OK,
+            data: `The password for this ${decode.email} has been successfully changed.`,
           });
+        } else {
+          res.send({
+            status: StatusCodes.OK,
+            message: ReasonPhrases.OK,
+            data: `The password for this ${decode.email} has can not been changed.`,
+          });
+        }
       })
       .catch((error) => {
         res.send({
           status: StatusCodes.INTERNAL_SERVER_ERROR,
           message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-          error: error,
+          error: error.message,
         });
       });
   } catch (error) {
