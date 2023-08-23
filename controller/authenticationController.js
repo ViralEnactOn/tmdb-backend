@@ -8,6 +8,9 @@ const sendResponse = require("../config/responseUtil");
 const { default: jwtDecode } = require("jwt-decode");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const path = require("path");
+const {
+  verifyUserMiddleware,
+} = require("../middleware/authenticationMiddleware");
 
 const encryptPassword = async (password) => {
   try {
@@ -145,42 +148,27 @@ const validate_user = async (req, res) => {
 };
 
 const login_user = async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
 
   try {
-    const user = await db("user")
-      .where({ email })
-      .where({ isVerified: true })
-      .first();
+    await verifyUserMiddleware(req, res, async () => {
+      const passwordMatches = await bcrypt.compare(password, req.user.password);
+      if (!passwordMatches) {
+        sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
+          message: "Invalid password!",
+        });
+      } else {
+        const token = jwt.sign(
+          { id: req.user.id, email: req.user.email, name: req.user.name },
+          config.jwt.secret_key
+        );
 
-    if (!user) {
-      return sendResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        ReasonPhrases.BAD_REQUEST,
-        {
-          message: "User not found or please verify your email!",
-        }
-      );
-    }
-
-    const passwordMatches = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatches) {
-      sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
-        message: "Invalid password!",
-      });
-    } else {
-      const token = jwt.sign(
-        { id: user.id, email: user.email, name: user.name },
-        config.jwt.secret_key
-      );
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        user: user,
-        token: token,
-      });
-    }
+        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+          user: req.user,
+          token: token,
+        });
+      }
+    });
   } catch (error) {
     sendResponse(
       res,
@@ -190,8 +178,6 @@ const login_user = async (req, res) => {
     );
   }
 };
-
-// i want to check user is verified or not using express middleware
 
 const forgot_password = async (req, res) => {
   try {
