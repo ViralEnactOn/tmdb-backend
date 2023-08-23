@@ -191,6 +191,8 @@ const login_user = async (req, res) => {
   }
 };
 
+// i want to check user is verified or not using express middleware
+
 const forgot_password = async (req, res) => {
   try {
     const { email } = req.body;

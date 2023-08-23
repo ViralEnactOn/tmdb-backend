@@ -48,6 +48,7 @@ const fetchAllRecord = async () => {
           break;
         }
         combinedRecords = combinedData;
+        let formatedMovies = [];
         const insertPromises = combinedRecords.map(async (item, index) => {
           let production_countries = [];
           let spoken_languages = [];
@@ -57,7 +58,7 @@ const fetchAllRecord = async () => {
           let spokenDetail = await item.detail.spoken_languages.map((data) => {
             spoken_languages.push(data.iso_639_1);
           });
-          await db("movie").insert({
+          formatedMovies.push({
             id: item.id,
             adult: item.adult,
             backdrop_path: config.tmdb_service.image_url + item.backdrop_path,
@@ -85,6 +86,7 @@ const fetchAllRecord = async () => {
           });
         });
         await Promise.all(insertPromises);
+        await db("movie").insert(formatedMovies);
 
         console.log("Total Records", page * 20);
         page++;
