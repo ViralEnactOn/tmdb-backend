@@ -1,6 +1,6 @@
 const config = require("../config/config");
 const db = require("../config/db");
-const { movieSchema } = require("../schema/movieModel");
+const { movieSchema } = require("../schema/movieSchema");
 
 db.schema.hasTable("movie").then(async (exists) => {
   if (!exists) {

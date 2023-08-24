@@ -1,22 +1,28 @@
-const db = require("../config/db");
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
-const { watchlistSchema } = require("../schema/userWatchListModel");
+const { watchlistSchema } = require("../schema/userWatchListSchema");
 const {
   authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
+const {
+  user_watch_list_exist,
+  insert_user_watch_list,
+  update_user_watch_list,
+  delete_user_watch_list,
+  fetch_user_watch_list,
+  insert_movie_watch_list,
+  delete_movie_watch_list,
+  fetch_movie_watch_list,
+} = require("../models/watchlistModel");
+const { movie_details } = require("../models/movieModel");
 
 const insert_watch_list = async (req, res) => {
   const { name, isPublic } = req.body;
   const insertWatchList = async () => {
     try {
       await authenticationUserMiddleware(req, res, async () => {
-        await db("user_watch_list").insert({
-          name: name,
-          user_id: req.user.id,
-          isPublic: isPublic,
-        });
+        await insert_user_watch_list(req.user.id, name, isPublic);
 
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
           message: "New watch list operation successful",
@@ -34,7 +40,7 @@ const insert_watch_list = async (req, res) => {
 
   try {
     // Check if the watch list table exists
-    const tableExists = await db.schema.hasTable("user_watch_list");
+    const tableExists = await user_watch_list_exist();
     if (!tableExists) {
       // If the table doesn't exist, create it
       await watchlistSchema.then(() => {
@@ -59,13 +65,12 @@ const update_watch_list = async (req, res) => {
 
   try {
     await authenticationUserMiddleware(req, res, async () => {
-      const updatedWatchList = await db("user_watch_list")
-        .where({ user_id: req.user.id, id: id })
-        .update({
-          name: name,
-          isPublic: isPublic,
-          updated_at: db.fn.now(),
-        });
+      const updatedWatchList = await update_user_watch_list(
+        id,
+        req.user.id,
+        name,
+        isPublic
+      );
 
       if (updatedWatchList === 1) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
@@ -91,12 +96,7 @@ const delete_watch_list = async (req, res) => {
   const { id } = req.body;
   try {
     await authenticationUserMiddleware(req, res, async () => {
-      const deletedWatchList = await db("user_watch_list")
-        .where({ user_id: req.user.id, id: id })
-        .update({
-          isDeleted: true,
-          updated_at: db.fn.now(),
-        });
+      const deletedWatchList = await delete_user_watch_list(id, req.user.id);
 
       if (deletedWatchList === 1) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
@@ -121,17 +121,7 @@ const delete_watch_list = async (req, res) => {
 const fetch_watch_list = async (req, res) => {
   try {
     await authenticationUserMiddleware(req, res, async () => {
-      const watchListData = await db
-        .select(
-          "user_watch_list.id as user_watch_list_id",
-          "user_watch_list.name as user_watch_list_name",
-          "user.id as user_id",
-          "user.name as user_name",
-          "user.email as user_email"
-        )
-        .where({ user_id: req.user.id, isDeleted: false })
-        .from("user_watch_list")
-        .join("user", "user_watch_list.user_id", "user.id");
+      const watchListData = await fetch_user_watch_list(req.user.id);
 
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
         watch_list: watchListData,
@@ -153,16 +143,11 @@ const insert_movie = async (req, res) => {
 
   try {
     await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await db("user_watch_list")
-        .where({ id: id })
-        .where({ user_id: req.user.id })
-        .update({
-          movies: db.raw(
-            `JSON_ARRAY_APPEND(COALESCE(movies, JSON_ARRAY()), '$', ?)`,
-            [movie_id]
-          ),
-          updated_at: db.fn.now(),
-        });
+      const updateResult = await insert_movie_watch_list(
+        id,
+        req.user.id,
+        movie_id
+      );
 
       if (updateResult === 0) {
         return sendResponse(
@@ -193,16 +178,11 @@ const delete_movie = async (req, res) => {
   const { id, watch_list_id } = req.body;
   try {
     await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await db("user_watch_list")
-        .where("id", id)
-        .where({ user_id: req.user.id })
-        .update({
-          movies: db.raw(
-            `JSON_REMOVE(COALESCE(movies, '[]'), JSON_UNQUOTE(JSON_SEARCH(COALESCE(movies, '[]'), 'one', ?)))`,
-            [watch_list_id]
-          ),
-          updated_at: db.fn.now(),
-        });
+      const updateResult = await delete_movie_watch_list(
+        id,
+        req.user.id,
+        watch_list_id
+      );
 
       if (updateResult === 0) {
         return sendResponse(
@@ -234,21 +214,18 @@ const fetch_movie = async (req, res) => {
   let watch_list = [];
 
   try {
-    const watchlist = await db("user_watch_list")
-      .where({
-        id: watch_list_id,
-        user_id: user_id,
-        isDeleted: false,
-        isPublic: isPublic === "false" || false ? 0 : 1,
-      })
-      .first();
+    const watchlist = await fetch_movie_watch_list(
+      user_id,
+      watch_list_id,
+      isPublic
+    );
 
     if (watchlist && watchlist.movies) {
       watch_list.push(watchlist);
 
       const movieIds = JSON.parse(watchlist.movies);
       // Fetch movie details for the IDs in the movies array
-      const movieDetails = await db("movie").whereIn("id", movieIds);
+      const movieDetails = await movie_details(movieIds);
 
       if (movieDetails.length > 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {

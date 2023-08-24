@@ -1,8 +1,9 @@
-const db = require("../config/db");
 const jwt = require("jsonwebtoken");
 const config = require("../config/config");
-const { userSchema } = require("../schema/userModel");
-const { userFavoriteMovieSchema } = require("../schema/userFavoriteMovieModel");
+const { userSchema } = require("../schema/userSchema");
+const {
+  userFavoriteMovieSchema,
+} = require("../schema/userFavoriteMovieSchema");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../config/sendMail");
 const sendResponse = require("../config/responseUtil");
@@ -11,6 +12,16 @@ const path = require("path");
 const {
   authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
+const {
+  favorite_exist,
+  insert_favorite,
+  user_exist,
+  check_user,
+  insert_user,
+  verify_user,
+  verified_user,
+  reset_user_password,
+} = require("../models/authenticationModel");
 
 const encryptPassword = async (password) => {
   try {
@@ -25,18 +36,14 @@ const encryptPassword = async (password) => {
 
 const insertFavorite = async (userId) => {
   try {
-    const exists = await db.schema.hasTable("user_favorite_movie");
+    const exists = await favorite_exist();
 
     if (!exists) {
       await userFavoriteMovieSchema.then(() => {
-        return db("user_favorite_movie").insert({
-          user_id: userId,
-        });
+        return insert_favorite(userId);
       });
     } else {
-      return db("user_favorite_movie").insert({
-        user_id: userId,
-      });
+      return insert_favorite(userId);
     }
   } catch (error) {
     throw error;
@@ -49,7 +56,8 @@ const register_user = async (req, res) => {
   const insertUser = async () => {
     try {
       // Check if user with the given email exists
-      let userData = await db("user").where({ email: email });
+      let userData = await check_user(email);
+      console.log(userData);
       if (userData.length !== 0) {
         return sendResponse(
           res,
@@ -62,16 +70,10 @@ const register_user = async (req, res) => {
       }
 
       // Insert the user
-      await db("user").insert({
-        name: name,
-        email: email,
-        password: hashedPassword,
-        isVerified: false,
-        token: token,
-      });
+      await insert_user(name, email, hashedPassword, token);
 
       // Get the inserted user's data
-      const responseData = await db("user").where({ email: email }).first();
+      const responseData = await check_user();
       await insertFavorite(responseData.id);
 
       // Send verification email
@@ -92,7 +94,7 @@ const register_user = async (req, res) => {
   };
   try {
     // Check if the user table exists
-    const tableExists = await db.schema.hasTable("user");
+    const tableExists = await user_exist();
     if (!tableExists) {
       // If the table doesn't exist, create it
       await userSchema.then(() => {
@@ -116,13 +118,7 @@ const validate_user = async (req, res) => {
   const { id, token } = req.params;
 
   try {
-    const user = await db("user")
-      .where({
-        id: id,
-        token: token,
-        isVerified: false,
-      })
-      .first();
+    const user = verify_user(id, token);
 
     if (!user) {
       return sendResponse(
@@ -133,9 +129,7 @@ const validate_user = async (req, res) => {
       );
     }
 
-    await db("user")
-      .where({ id: id })
-      .update({ isVerified: true, updated_at: db.fn.now() });
+    await verified_user(id);
 
     return sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       message: "User verified successfully",
@@ -231,9 +225,11 @@ const reset_password = async (req, res) => {
       // Encrypt the new password
       const hashedPassword = await encryptPassword(password);
 
-      const updateResponse = await db("user")
-        .where({ id: id, token: token })
-        .update({ password: hashedPassword });
+      const updateResponse = await reset_user_password(
+        id,
+        token,
+        hashedPassword
+      );
 
       if (updateResponse === 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {

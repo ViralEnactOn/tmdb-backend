@@ -1,25 +1,21 @@
-const db = require("../config/db");
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
 const {
   authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
+const {
+  insert_record,
+  find_record,
+  delete_record,
+} = require("../models/favoriteModel");
+const { movie_details } = require("../models/movieModel");
 
 const insert_favorite = async (req, res) => {
   const { type, items } = req.body;
   try {
     await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await db("user_favorite_movie")
-        .where({ user_id: req.user.id })
-        .update({
-          type: type,
-          items: db.raw(
-            `JSON_ARRAY_APPEND(COALESCE(items, JSON_ARRAY()), '$', ?)`,
-            [items]
-          ),
-          updated_at: db.fn.now(),
-        });
+      const updateResult = await insert_record(req.user.id, type, items);
       if (updateResult === 0) {
         return sendResponse(
           res,
@@ -49,9 +45,7 @@ const fetch_favorite = async (req, res) => {
 
   try {
     await authenticationUserMiddleware(req, res, async () => {});
-    const watchlist = await db("user_favorite_movie")
-      .where({ user_id: req.user.id })
-      .first();
+    const watchlist = await find_record(req.user.id);
 
     if (watchlist && watchlist.items) {
       watch_list.push(watchlist);
@@ -59,7 +53,7 @@ const fetch_favorite = async (req, res) => {
       const movieIds = JSON.parse(watchlist.items);
 
       // Fetch movie details for the IDs in the items array
-      const movieDetails = await db("movie").whereIn("id", movieIds);
+      const movieDetails = await movie_details(movieIds);
 
       if (movieDetails.length > 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
@@ -90,15 +84,7 @@ const delete_favorite = async (req, res) => {
   const { favorite_list_id } = req.body;
   try {
     await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await db("user_favorite_movie")
-        .where({ user_id: req.user.id })
-        .update({
-          items: db.raw(
-            `JSON_REMOVE(COALESCE(items, '[]'), JSON_UNQUOTE(JSON_SEARCH(COALESCE(items, '[]'), 'one', ?)))`,
-            [favorite_list_id]
-          ),
-          updated_at: db.fn.now(),
-        });
+      const updateResult = await delete_record(req.user.id, favorite_list_id);
 
       if (updateResult === 0) {
         return sendResponse(

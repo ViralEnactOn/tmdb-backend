@@ -1,8 +1,6 @@
 const knex = require("knex");
-// const config = require("./knexconfig");
 const config = require("../config/config");
 
-// const db = knex(config.development);
 const development = {
   client: "mysql2",
   connection: {
