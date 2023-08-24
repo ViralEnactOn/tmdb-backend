@@ -1,15 +1,15 @@
 const db = require("../config/db");
 const jwt = require("jsonwebtoken");
 const config = require("../config/config");
-const { userSchema } = require("../models/userModel");
+const { userSchema } = require("../schema/userModel");
+const { userFavoriteMovieSchema } = require("../schema/userFavoriteMovieModel");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../config/sendMail");
 const sendResponse = require("../config/responseUtil");
-const { default: jwtDecode } = require("jwt-decode");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const path = require("path");
 const {
-  verifyUserMiddleware,
+  authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
 
 const encryptPassword = async (password) => {
@@ -51,10 +51,14 @@ const register_user = async (req, res) => {
       // Check if user with the given email exists
       let userData = await db("user").where({ email: email });
       if (userData.length !== 0) {
-        return res.send({
-          status: StatusCodes.BAD_REQUEST,
-          message: `User with the given email already exists!`,
-        });
+        return sendResponse(
+          res,
+          StatusCodes.BAD_REQUEST,
+          ReasonPhrases.BAD_REQUEST,
+          {
+            message: `User with the given email already exists!`,
+          }
+        );
       }
 
       // Insert the user
@@ -68,6 +72,7 @@ const register_user = async (req, res) => {
 
       // Get the inserted user's data
       const responseData = await db("user").where({ email: email }).first();
+      await insertFavorite(responseData.id);
 
       // Send verification email
       const message = `${config.app.base_url}/user/verify/${responseData.id}/${responseData.token}`;
@@ -90,7 +95,7 @@ const register_user = async (req, res) => {
     const tableExists = await db.schema.hasTable("user");
     if (!tableExists) {
       // If the table doesn't exist, create it
-      await userSchema().then(() => {
+      await userSchema.then(() => {
         insertUser();
       });
     } else {
@@ -132,10 +137,8 @@ const validate_user = async (req, res) => {
       .where({ id: id })
       .update({ isVerified: true, updated_at: db.fn.now() });
 
-    await insertFavorite(id);
-
     return sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-      message: "User verified and favorite inserted successfully",
+      message: "User verified successfully",
     });
   } catch (error) {
     sendResponse(
@@ -151,7 +154,7 @@ const login_user = async (req, res) => {
   const { password } = req.body;
 
   try {
-    await verifyUserMiddleware(req, res, async () => {
+    await authenticationUserMiddleware(req, res, async () => {
       const passwordMatches = await bcrypt.compare(password, req.user.password);
       if (!passwordMatches) {
         sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
@@ -183,39 +186,30 @@ const forgot_password = async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Update user's token in the database
-    const updateResponse = await db("user").where({
-      email: email,
-      isVerified: true,
+    await authenticationUserMiddleware(req, res, async () => {
+      const updateResponse = req.user;
+      if (!updateResponse) {
+        // Send a response indicating the email is not found
+        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+          message: `This ${email} does not exist or is not verified`,
+        });
+      } else {
+        // Compose the reset password URL
+        const resetPasswordUrl = `${config.app.base_url}/user/reset_password/id=${updateResponse.id}/token=${updateResponse.token}`;
+
+        // Send the reset password email
+        await sendEmail.forgotEmail(
+          updateResponse.email,
+          "Forgot Password",
+          resetPasswordUrl
+        );
+
+        // Send a success response
+        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+          message: `A forgot password email has been sent to ${updateResponse.email}`,
+        });
+      }
     });
-
-    if (!updateResponse) {
-      // Send a response indicating the email is not found
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `This ${email} does not exist or is not verified`,
-      });
-    } else {
-      // Fetch the user data
-      const responseData = await db("user")
-        .where({ email: email })
-        .where({ isVerified: true })
-        .first();
-
-      // Compose the reset password URL
-      const resetPasswordUrl = `${config.app.base_url}/user/reset_password/id=${responseData.id}/token=${responseData.token}`;
-
-      // Send the reset password email
-      await sendEmail.forgotEmail(
-        responseData.email,
-        "Forgot Password",
-        resetPasswordUrl
-      );
-
-      // Send a success response
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `A forgot password email has been sent to ${responseData.email}`,
-      });
-    }
   } catch (error) {
     sendResponse(
       res,
@@ -233,25 +227,24 @@ const reset_password_template = (req, res) => {
 const reset_password = async (req, res) => {
   try {
     const { password, token, id } = req.body;
-    const decode = jwtDecode(token);
+    await authenticationUserMiddleware(req, res, async () => {
+      // Encrypt the new password
+      const hashedPassword = await encryptPassword(password);
 
-    // Encrypt the new password
-    const hashedPassword = await encryptPassword(password);
+      const updateResponse = await db("user")
+        .where({ id: id, token: token })
+        .update({ password: hashedPassword });
 
-    // Update user's password and clear the token
-    const updateResponse = await db("user")
-      .where({ id: id, token: token })
-      .update({ password: hashedPassword });
-
-    if (updateResponse === 0) {
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `The password for ${decode.email} could not be changed.`,
-      });
-    } else {
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `The password for ${decode.email} has been successfully changed.`,
-      });
-    }
+      if (updateResponse === 0) {
+        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+          message: `The password for ${req.user.email} could not be changed.`,
+        });
+      } else {
+        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+          message: `The password for ${req.user.email} has been successfully changed.`,
+        });
+      }
+    });
   } catch (error) {
     sendResponse(
       res,

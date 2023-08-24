@@ -2,7 +2,11 @@ const db = require("../config/db");
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
-const { commentMovieSchema } = require("../models/commentMovieModel");
+const { commentMovieSchema } = require("../schema/commentMovieModel");
+const { likeMovieSchema } = require("../schema/likeMovieModel");
+const {
+  verifyUserMiddleware,
+} = require("../middleware/authenticationMiddleware");
 const get_movie_list = async (req, res) => {
   try {
     const response = await db.from("movie");
@@ -33,7 +37,6 @@ const movie = async (req, res) => {
       movies: response,
     });
   } catch (error) {
-    console.log("Catch error", error);
     sendResponse(
       res,
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -66,39 +69,40 @@ const genres_rating = async (req, res) => {
 };
 
 const movie_rating = async (req, res) => {
-  const { token, movie_id, type, rating } = req.body;
-  const decode = jwtDecode(token);
+  const { movie_id, type, rating } = req.body;
 
   try {
-    const movie_like = async () => {
-      try {
-        await db("user_rating").insert({
-          user_id: decode.id,
-          movie_id: movie_id,
-          type: type,
-          rating: rating,
-        });
+    await verifyUserMiddleware(req, res, async () => {
+      const movie_like = async () => {
+        try {
+          await db("user_rating").insert({
+            user_id: req.user.id,
+            movie_id: movie_id,
+            type: type,
+            rating: rating,
+          });
 
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: "Movie rating inserted successfully",
+          sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+            message: "Movie rating inserted successfully",
+          });
+        } catch (error) {
+          sendResponse(
+            res,
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            ReasonPhrases.INTERNAL_SERVER_ERROR,
+            error.message
+          );
+        }
+      };
+      const exists = await db.schema.hasTable("user_rating");
+      if (!exists) {
+        await likeMovieSchema.then(async (response) => {
+          await movie_like();
         });
-      } catch (error) {
-        sendResponse(
-          res,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          ReasonPhrases.INTERNAL_SERVER_ERROR,
-          error.message
-        );
-      }
-    };
-    const exists = await db.schema.hasTable("user_rating");
-    if (!exists) {
-      await likeMovieSchema.then(async (response) => {
+      } else {
         await movie_like();
-      });
-    } else {
-      await movie_like();
-    }
+      }
+    });
   } catch (error) {
     sendResponse(
       res,
@@ -110,40 +114,39 @@ const movie_rating = async (req, res) => {
 };
 
 const comment_movie = async (req, res) => {
-  const { token, movie_id, comment } = req.body;
-  const decode = jwtDecode(token);
+  const { movie_id, comment } = req.body;
 
   try {
-    const movie_comment = async () => {
-      try {
-        const commentIds = await db("user_comment").insert({
-          movie_id: movie_id,
-          user_id: decode.id,
-          text: comment,
-        });
+    await verifyUserMiddleware(req, res, async () => {
+      const movie_comment = async () => {
+        try {
+          await db("user_comment").insert({
+            movie_id: movie_id,
+            user_id: req.user.id,
+            text: comment,
+          });
 
-        const parentCommentId = commentIds[0]; // Assuming commentIds is an array with the inserted comment ID
-
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          commentId: "Comment inserted successfully",
+          sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+            commentId: "Comment inserted successfully",
+          });
+        } catch (error) {
+          sendResponse(
+            res,
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            ReasonPhrases.INTERNAL_SERVER_ERROR,
+            error.message
+          );
+        }
+      };
+      const exists = await db.schema.hasTable("user_comment");
+      if (!exists) {
+        await commentMovieSchema.then(async (response) => {
+          await movie_comment();
         });
-      } catch (error) {
-        sendResponse(
-          res,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          ReasonPhrases.INTERNAL_SERVER_ERROR,
-          error.message
-        );
-      }
-    };
-    const exists = await db.schema.hasTable("user_comment");
-    if (!exists) {
-      await commentMovieSchema.then(async (response) => {
+      } else {
         await movie_comment();
-      });
-    } else {
-      await movie_comment();
-    }
+      }
+    });
   } catch (error) {
     sendResponse(
       res,
@@ -155,30 +158,20 @@ const comment_movie = async (req, res) => {
 };
 
 const nested_comment = async (req, res) => {
-  const { token, movie_id, comment, parent_comment_id } = req.body;
-  let decode = jwtDecode(token);
+  const { movie_id, comment, parent_comment_id } = req.body;
   try {
-    await db("user_comment")
-      .insert({
+    await verifyUserMiddleware(req, res, async () => {
+      await db("user_comment").insert({
         movie_id: movie_id,
-        user_id: decode.id,
+        user_id: req.user.id,
         text: comment,
         parent_comment_id: parent_comment_id,
-      })
-      .then((commentIds) => {
-        const nestedCommentId = commentIds[0]; // Assuming commentIds is an array with the inserted comment ID
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: "Nested comment inserted successfully",
-        });
-      })
-      .catch((error) => {
-        sendResponse(
-          res,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          ReasonPhrases.INTERNAL_SERVER_ERROR,
-          error.message
-        );
       });
+
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: "Nested comment inserted successfully",
+      });
+    });
   } catch (error) {
     sendResponse(
       res,
@@ -213,17 +206,16 @@ const movie_chart = async (req, res) => {
       .groupBy(db.raw("YEAR(release_date), WEEK(release_date)"))
       .orderBy(db.raw("YEAR(release_date), WEEK(release_date)"));
 
-    res.send({
-      status: StatusCodes.OK,
-      message: ReasonPhrases.OK,
-      data: { movie: releaseCounts },
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      movie: releaseCounts,
     });
   } catch (error) {
-    res.send({
-      status: StatusCodes.INTERNAL_SERVER_ERROR,
-      message: ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error: error.message,
-    });
+    sendResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      ReasonPhrases.INTERNAL_SERVER_ERROR,
+      error.message
+    );
   }
 };
 

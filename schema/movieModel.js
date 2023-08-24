@@ -27,6 +27,7 @@ const movieSchema = db.schema.createTable("movie", (table) => {
   table.json("spoken_languages");
   table.timestamp("created_at").defaultTo(db.fn.now());
   table.timestamp("updated_at").defaultTo(db.fn.now());
+  table.index("id");
 });
 
 module.exports = { movieSchema };

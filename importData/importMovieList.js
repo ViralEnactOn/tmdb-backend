@@ -1,6 +1,6 @@
 const config = require("../config/config");
 const db = require("../config/db");
-const { movieSchema } = require("../models/movieModel");
+const { movieSchema } = require("../schema/movieModel");
 
 db.schema.hasTable("movie").then(async (exists) => {
   if (!exists) {
@@ -31,10 +31,13 @@ const fetchAllRecord = async () => {
   const insertData = async () => {
     try {
       let page = 1;
-      let combinedRecords = [];
 
       while (true) {
         const data = await fetchData(page);
+        if (data === undefined) {
+          break;
+        }
+
         const combinedData = await Promise.all(
           data.map(async (item) => {
             const detailRecord = await fetchDetailRecord(item.id);
@@ -44,12 +47,9 @@ const fetchAllRecord = async () => {
             };
           })
         );
-        if (page === 101) {
-          break;
-        }
-        combinedRecords = combinedData;
+
         let formatedMovies = [];
-        const insertPromises = combinedRecords.map(async (item, index) => {
+        const insertPromises = combinedData.map(async (item, index) => {
           let production_countries = [];
           let spoken_languages = [];
           let newDetail = await item.detail.production_countries.map((data) => {
