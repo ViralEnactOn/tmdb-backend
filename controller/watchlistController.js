@@ -2,31 +2,17 @@ const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
 const { watchlistSchema } = require("../schema/userWatchListSchema");
-const {
-  authenticationUserMiddleware,
-} = require("../middleware/authenticationMiddleware");
-const {
-  user_watch_list_exist,
-  insert_user_watch_list,
-  update_user_watch_list,
-  delete_user_watch_list,
-  fetch_user_watch_list,
-  insert_movie_watch_list,
-  delete_movie_watch_list,
-  fetch_movie_watch_list,
-} = require("../models/watchlistModel");
-const { movie_details } = require("../models/movieModel");
+const watchlistModel = require("../models/watchlistModel");
+const movieModel = require("../models/movieModel");
 
 const insert_watch_list = async (req, res) => {
   const { name, isPublic } = req.body;
   const insertWatchList = async () => {
     try {
-      await authenticationUserMiddleware(req, res, async () => {
-        await insert_user_watch_list(req.user.id, name, isPublic);
+      await watchlistModel.insert_user_watch_list(req.user.id, name, isPublic);
 
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: "New watch list operation successful",
-        });
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: "New watch list operation successful",
       });
     } catch (error) {
       sendResponse(
@@ -39,15 +25,12 @@ const insert_watch_list = async (req, res) => {
   };
 
   try {
-    // Check if the watch list table exists
-    const tableExists = await user_watch_list_exist();
+    const tableExists = await watchlistModel.user_watch_list_exist();
     if (!tableExists) {
-      // If the table doesn't exist, create it
       await watchlistSchema.then(() => {
         insertWatchList();
       });
     } else {
-      // If the table already exists, directly insert the watch list
       await insertWatchList();
     }
   } catch (error) {
@@ -64,24 +47,22 @@ const update_watch_list = async (req, res) => {
   const { id, name, isPublic } = req.body;
 
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const updatedWatchList = await update_user_watch_list(
-        id,
-        req.user.id,
-        name,
-        isPublic
-      );
+    const updatedWatchList = await watchlistModel.update_user_watch_list(
+      id,
+      req.user.id,
+      name,
+      isPublic
+    );
 
-      if (updatedWatchList === 1) {
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: "Watch list operation successful",
-        });
-      } else {
-        sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
-          message: "Watch list entry not found",
-        });
-      }
-    });
+    if (updatedWatchList === 1) {
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: "Watch list operation successful",
+      });
+    } else {
+      sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+        message: "Watch list entry not found",
+      });
+    }
   } catch (error) {
     sendResponse(
       res,
@@ -95,19 +76,20 @@ const update_watch_list = async (req, res) => {
 const delete_watch_list = async (req, res) => {
   const { id } = req.body;
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const deletedWatchList = await delete_user_watch_list(id, req.user.id);
+    const deletedWatchList = await watchlistModel.delete_user_watch_list(
+      id,
+      req.user.id
+    );
 
-      if (deletedWatchList === 1) {
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: "Watch list delete operation successful",
-        });
-      } else {
-        sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
-          message: "Watch list entry not found",
-        });
-      }
-    });
+    if (deletedWatchList === 1) {
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: "Watch list delete operation successful",
+      });
+    } else {
+      sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+        message: "Watch list entry not found",
+      });
+    }
   } catch (error) {
     sendResponse(
       res,
@@ -120,12 +102,12 @@ const delete_watch_list = async (req, res) => {
 
 const fetch_watch_list = async (req, res) => {
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const watchListData = await fetch_user_watch_list(req.user.id);
+    const watchListData = await watchlistModel.fetch_user_watch_list(
+      req.user.id
+    );
 
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        watch_list: watchListData,
-      });
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      watch_list: watchListData,
     });
   } catch (error) {
     sendResponse(
@@ -142,27 +124,20 @@ const insert_movie = async (req, res) => {
   const { movie_id, id } = req.body;
 
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await insert_movie_watch_list(
-        id,
-        req.user.id,
-        movie_id
-      );
+    const updateResult = await watchlistModel.insert_movie_watch_list(
+      id,
+      req.user.id,
+      movie_id
+    );
 
-      if (updateResult === 0) {
-        return sendResponse(
-          res,
-          StatusCodes.NOT_FOUND,
-          ReasonPhrases.NOT_FOUND,
-          {
-            message: "Watch list entry not found",
-          }
-        );
-      }
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: "Movie inserted successfully",
+    if (updateResult === 0) {
+      return sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+        message: "Watch list entry not found",
       });
+    }
+
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: "Movie inserted successfully",
     });
   } catch (error) {
     sendResponse(
@@ -177,27 +152,20 @@ const insert_movie = async (req, res) => {
 const delete_movie = async (req, res) => {
   const { id, watch_list_id } = req.body;
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await delete_movie_watch_list(
-        id,
-        req.user.id,
-        watch_list_id
-      );
+    const updateResult = await watchlistModel.delete_movie_watch_list(
+      id,
+      req.user.id,
+      watch_list_id
+    );
 
-      if (updateResult === 0) {
-        return sendResponse(
-          res,
-          StatusCodes.NOT_FOUND,
-          ReasonPhrases.NOT_FOUND,
-          {
-            message: "Watch list entry not found",
-          }
-        );
-      }
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: "Movie deleted successfully",
+    if (updateResult === 0) {
+      return sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+        message: "Watch list entry not found",
       });
+    }
+
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: "Movie deleted successfully",
     });
   } catch (error) {
     sendResponse(
@@ -214,7 +182,7 @@ const fetch_movie = async (req, res) => {
   let watch_list = [];
 
   try {
-    const watchlist = await fetch_movie_watch_list(
+    const watchlist = await watchlistModel.fetch_movie_watch_list(
       user_id,
       watch_list_id,
       isPublic
@@ -225,7 +193,7 @@ const fetch_movie = async (req, res) => {
 
       const movieIds = JSON.parse(watchlist.movies);
       // Fetch movie details for the IDs in the movies array
-      const movieDetails = await movie_details(movieIds);
+      const movieDetails = await movieModel.movie_details(movieIds);
 
       if (movieDetails.length > 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {

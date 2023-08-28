@@ -3,16 +3,16 @@ const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
 
-const authenticationUserMiddleware = async (req, res, next) => {
+const authorizationMiddleware = async (req, res, next) => {
   const { email, token } = req.body;
   let decode;
   if (token) {
     decode = jwtDecode(token);
   }
-
   try {
     const user = await db("user")
       .where({ email: email || decode.email })
+      .where({ isVerified: true })
       .first();
 
     if (!user) {
@@ -21,7 +21,7 @@ const authenticationUserMiddleware = async (req, res, next) => {
         StatusCodes.BAD_REQUEST,
         ReasonPhrases.BAD_REQUEST,
         {
-          message: "User not found!",
+          message: "User not found or please verify your email!",
         }
       );
     }
@@ -37,5 +37,4 @@ const authenticationUserMiddleware = async (req, res, next) => {
     );
   }
 };
-
-module.exports = { authenticationUserMiddleware };
+module.exports = { authorizationMiddleware };

@@ -32,6 +32,11 @@ const insert_user = async (name, email, hashedPassword, token) => {
   return user;
 };
 
+const login_user = async (email) => {
+  const user = await db("user").where({ email: email }).first();
+  return user;
+};
+
 const verify_user = async (id, token) => {
   const user = await db("user")
     .where({
@@ -63,6 +68,7 @@ module.exports = {
   insert_favorite,
   check_user,
   insert_user,
+  login_user,
   verify_user,
   verified_user,
   reset_user_password,

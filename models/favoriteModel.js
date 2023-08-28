@@ -1,6 +1,5 @@
 const db = require("../config/db");
 
-
 const insert_record = async (id, type, items) => {
   const favorite = await db("user_favorite_movie")
     .where({ user_id: id })

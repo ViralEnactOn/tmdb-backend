@@ -101,7 +101,7 @@ const forgotEmail = async (email, subject, text) => {
               </div>
               <p style="font-size: 1.1em">Hi,</p>
               <p>
-                Thank you for choosing TMDB. Use the following to complete your Sign Up procedures.
+                Thank you for choosing TMDB. Use the following to complete your reset password procedures.
               </p>
       
               <h2

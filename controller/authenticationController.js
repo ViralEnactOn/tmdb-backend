@@ -9,19 +9,7 @@ const sendEmail = require("../config/sendMail");
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const path = require("path");
-const {
-  authenticationUserMiddleware,
-} = require("../middleware/authenticationMiddleware");
-const {
-  favorite_exist,
-  insert_favorite,
-  user_exist,
-  check_user,
-  insert_user,
-  verify_user,
-  verified_user,
-  reset_user_password,
-} = require("../models/authenticationModel");
+const authenticationModel = require("../models/authenticationModel");
 
 const encryptPassword = async (password) => {
   try {
@@ -36,14 +24,14 @@ const encryptPassword = async (password) => {
 
 const insertFavorite = async (userId) => {
   try {
-    const exists = await favorite_exist();
+    const exists = await authenticationModel.favorite_exist();
 
     if (!exists) {
       await userFavoriteMovieSchema.then(() => {
-        return insert_favorite(userId);
+        return authenticationModel.insert_favorite(userId);
       });
     } else {
-      return insert_favorite(userId);
+      return authenticationModel.insert_favorite(userId);
     }
   } catch (error) {
     throw error;
@@ -56,7 +44,7 @@ const register_user = async (req, res) => {
   const insertUser = async () => {
     try {
       // Check if user with the given email exists
-      let userData = await check_user(email);
+      let userData = await authenticationModel.check_user(email);
       console.log(userData);
       if (userData.length !== 0) {
         return sendResponse(
@@ -70,10 +58,10 @@ const register_user = async (req, res) => {
       }
 
       // Insert the user
-      await insert_user(name, email, hashedPassword, token);
+      await authenticationModel.insert_user(name, email, hashedPassword, token);
 
       // Get the inserted user's data
-      const responseData = await check_user();
+      const responseData = await authenticationModel.check_user();
       await insertFavorite(responseData.id);
 
       // Send verification email
@@ -94,7 +82,7 @@ const register_user = async (req, res) => {
   };
   try {
     // Check if the user table exists
-    const tableExists = await user_exist();
+    const tableExists = await authenticationModel.user_exist();
     if (!tableExists) {
       // If the table doesn't exist, create it
       await userSchema.then(() => {
@@ -118,7 +106,7 @@ const validate_user = async (req, res) => {
   const { id, token } = req.params;
 
   try {
-    const user = verify_user(id, token);
+    const user = authenticationModel.verify_user(id, token);
 
     if (!user) {
       return sendResponse(
@@ -129,7 +117,7 @@ const validate_user = async (req, res) => {
       );
     }
 
-    await verified_user(id);
+    await authenticationModel.verified_user(id);
 
     return sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       message: "User verified successfully",
@@ -145,27 +133,26 @@ const validate_user = async (req, res) => {
 };
 
 const login_user = async (req, res) => {
-  const { password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const passwordMatches = await bcrypt.compare(password, req.user.password);
-      if (!passwordMatches) {
-        sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
-          message: "Invalid password!",
-        });
-      } else {
-        const token = jwt.sign(
-          { id: req.user.id, email: req.user.email, name: req.user.name },
-          config.jwt.secret_key
-        );
+    const user = await authenticationModel.login_user(email);
+    const passwordMatches = await bcrypt.compare(password, user.password);
+    if (!passwordMatches || user.length === 0) {
+      sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
+        message: "Invalid email or password!",
+      });
+    } else {
+      const token = jwt.sign(
+        { id: user.id, email: user.email, name: user.name },
+        config.jwt.secret_key
+      );
 
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          user: req.user,
-          token: token,
-        });
-      }
-    });
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        user: user,
+        token: token,
+      });
+    }
   } catch (error) {
     sendResponse(
       res,
@@ -179,31 +166,24 @@ const login_user = async (req, res) => {
 const forgot_password = async (req, res) => {
   try {
     const { email } = req.body;
+    const updateResponse = req.user;
+    if (!updateResponse) {
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: `This ${email} does not exist or is not verified`,
+      });
+    } else {
+      const resetPasswordUrl = `${config.app.base_url}/user/reset_password/id=${updateResponse.id}/token=${updateResponse.token}`;
 
-    await authenticationUserMiddleware(req, res, async () => {
-      const updateResponse = req.user;
-      if (!updateResponse) {
-        // Send a response indicating the email is not found
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: `This ${email} does not exist or is not verified`,
-        });
-      } else {
-        // Compose the reset password URL
-        const resetPasswordUrl = `${config.app.base_url}/user/reset_password/id=${updateResponse.id}/token=${updateResponse.token}`;
+      await sendEmail.forgotEmail(
+        updateResponse.email,
+        "Forgot Password",
+        resetPasswordUrl
+      );
 
-        // Send the reset password email
-        await sendEmail.forgotEmail(
-          updateResponse.email,
-          "Forgot Password",
-          resetPasswordUrl
-        );
-
-        // Send a success response
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: `A forgot password email has been sent to ${updateResponse.email}`,
-        });
-      }
-    });
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: `A forgot password email has been sent to ${updateResponse.email}`,
+      });
+    }
   } catch (error) {
     sendResponse(
       res,
@@ -221,26 +201,23 @@ const reset_password_template = (req, res) => {
 const reset_password = async (req, res) => {
   try {
     const { password, token, id } = req.body;
-    await authenticationUserMiddleware(req, res, async () => {
-      // Encrypt the new password
-      const hashedPassword = await encryptPassword(password);
+    const hashedPassword = await encryptPassword(password);
 
-      const updateResponse = await reset_user_password(
-        id,
-        token,
-        hashedPassword
-      );
+    const updateResponse = await authenticationModel.reset_user_password(
+      id,
+      token,
+      hashedPassword
+    );
 
-      if (updateResponse === 0) {
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: `The password for ${req.user.email} could not be changed.`,
-        });
-      } else {
-        sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          message: `The password for ${req.user.email} has been successfully changed.`,
-        });
-      }
-    });
+    if (updateResponse === 0) {
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: `The password for ${req.user.email} could not be changed.`,
+      });
+    } else {
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: `The password for ${req.user.email} has been successfully changed.`,
+      });
+    }
   } catch (error) {
     sendResponse(
       res,

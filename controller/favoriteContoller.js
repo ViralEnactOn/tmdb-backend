@@ -1,34 +1,23 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const { default: jwtDecode } = require("jwt-decode");
-const {
-  authenticationUserMiddleware,
-} = require("../middleware/authenticationMiddleware");
-const {
-  insert_record,
-  find_record,
-  delete_record,
-} = require("../models/favoriteModel");
-const { movie_details } = require("../models/movieModel");
+const favoriteModel = require("../models/favoriteModel");
+const movieModel = require("../models/movieModel");
 
 const insert_favorite = async (req, res) => {
   const { type, items } = req.body;
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await insert_record(req.user.id, type, items);
-      if (updateResult === 0) {
-        return sendResponse(
-          res,
-          StatusCodes.NOT_FOUND,
-          ReasonPhrases.NOT_FOUND,
-          {
-            message: "Favorite list entry not found",
-          }
-        );
-      }
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: "Favorite list inserted successfully",
+    const updateResult = await favoriteModel.insert_record(
+      req.user.id,
+      type,
+      items
+    );
+    if (updateResult === 0) {
+      return sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+        message: "Favorite list entry not found",
       });
+    }
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: "Favorite list inserted successfully",
     });
   } catch (error) {
     sendResponse(
@@ -44,8 +33,7 @@ const fetch_favorite = async (req, res) => {
   let watch_list = [];
 
   try {
-    await authenticationUserMiddleware(req, res, async () => {});
-    const watchlist = await find_record(req.user.id);
+    const watchlist = await favoriteModel.find_record(req.user.id);
 
     if (watchlist && watchlist.items) {
       watch_list.push(watchlist);
@@ -53,7 +41,7 @@ const fetch_favorite = async (req, res) => {
       const movieIds = JSON.parse(watchlist.items);
 
       // Fetch movie details for the IDs in the items array
-      const movieDetails = await movie_details(movieIds);
+      const movieDetails = await movieModel.movie_details(movieIds);
 
       if (movieDetails.length > 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
@@ -83,23 +71,19 @@ const fetch_favorite = async (req, res) => {
 const delete_favorite = async (req, res) => {
   const { favorite_list_id } = req.body;
   try {
-    await authenticationUserMiddleware(req, res, async () => {
-      const updateResult = await delete_record(req.user.id, favorite_list_id);
+    const updateResult = await favoriteModel.delete_record(
+      req.user.id,
+      favorite_list_id
+    );
 
-      if (updateResult === 0) {
-        return sendResponse(
-          res,
-          StatusCodes.NOT_FOUND,
-          ReasonPhrases.NOT_FOUND,
-          {
-            message: "Watch list entry not found",
-          }
-        );
-      }
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: "Movie deleted successfully",
+    if (updateResult === 0) {
+      return sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+        message: "Watch list entry not found",
       });
+    }
+
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: "Movie deleted successfully",
     });
   } catch (error) {
     sendResponse(
