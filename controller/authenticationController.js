@@ -45,8 +45,8 @@ const register_user = async (req, res) => {
     try {
       // Check if user with the given email exists
       let userData = await authenticationModel.check_user(email);
-      console.log(userData);
-      if (userData.length !== 0) {
+      console.log({ userData });
+      if (userData !== undefined) {
         return sendResponse(
           res,
           StatusCodes.BAD_REQUEST,
@@ -61,7 +61,8 @@ const register_user = async (req, res) => {
       await authenticationModel.insert_user(name, email, hashedPassword, token);
 
       // Get the inserted user's data
-      const responseData = await authenticationModel.check_user();
+      const responseData = await authenticationModel.check_user(email);
+      console.log(responseData);
       await insertFavorite(responseData.id);
 
       // Send verification email
