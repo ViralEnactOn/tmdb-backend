@@ -43,6 +43,7 @@ const genres_rating = async (req, res) => {
   const { genres_id } = req.body;
 
   try {
+    // c. Show genere wise vote_average in the list
     const response = await movieModel.movie_genres_rating(genres_id);
 
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {

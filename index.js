@@ -1,10 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const movieRoutes = require("./routes/movieRoutes");
-const authenticationRoutes = require("./routes/authenticationRoutes");
-const watchlistRoutes = require("./routes/watchlistRoutes");
-const favoriteRoutes = require("./routes/favoriteRoutes");
-const reactionRoutes = require("./routes/reactionRoutes");
+const {
+  movieRoutes,
+  authenticationRoutes,
+  watchlistRoutes,
+  favoriteRoutes,
+  reactionRoutes,
+} = require("./routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -30,13 +30,13 @@ const insert_favorite = async (req, res) => {
 };
 
 const fetch_favorite = async (req, res) => {
-  let watch_list = [];
+  // let watch_list = [];
 
   try {
     const watchlist = await favoriteModel.find_record(req.user.id);
 
     if (watchlist && watchlist.items) {
-      watch_list.push(watchlist);
+      // watch_list.push(watchlist);
 
       const movieIds = JSON.parse(watchlist.items);
 
@@ -45,7 +45,7 @@ const fetch_favorite = async (req, res) => {
 
       if (movieDetails.length > 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-          favorite_list: watch_list,
+          // favorite_list: watch_list,
           movieDetails: movieDetails,
         });
       } else {

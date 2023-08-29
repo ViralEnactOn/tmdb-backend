@@ -40,8 +40,8 @@ const login_user = async (email) => {
 const verify_user = async (id, token) => {
   const user = await db("user")
     .where({
-      id: id,
-      token: token,
+      id: id, 
+      token: token, //TODO: Remove This method
       isVerified: false,
     })
     .first();

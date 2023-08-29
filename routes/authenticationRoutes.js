@@ -10,7 +10,7 @@ router.get("/verify/:id/:token", authenticationController.validate_user);
 router.post("/login", authenticationController.login_user);
 router.post(
   "/forgot_password",
-  authenticationUserMiddleware,
+  authenticationUserMiddleware, //TODO: Remove this middleware from here
   authenticationController.forgot_password
 );
 router.get(
@@ -20,7 +20,7 @@ router.get(
 
 router.post(
   "/reset_password",
-  authenticationUserMiddleware,
+  authenticationUserMiddleware, //TODO: Remove this middleware from here
   authenticationController.reset_password
 );
 

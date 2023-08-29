@@ -58,15 +58,15 @@ const register_user = async (req, res) => {
       }
 
       // Insert the user
-      await authenticationModel.insert_user(name, email, hashedPassword, token);
+      await authenticationModel.insert_user(name, email, hashedPassword, token); //TODO: Remove token from here
 
       // Get the inserted user's data
-      const responseData = await authenticationModel.check_user(email);
+      const responseData = await authenticationModel.check_user(email); //TODO: Rename check_user to get_user
       console.log(responseData);
-      await insertFavorite(responseData.id);
+      await insertFavorite(responseData.id); //TODO: Remove this from here, and create separate controller as UserController to have such method
 
       // Send verification email
-      const message = `${config.app.base_url}/user/verify/${responseData.id}/${responseData.token}`;
+      const message = `${config.app.base_url}/user/verify/${responseData.id}/${responseData.token}`; //TODO: Pass only token. in token store id and email
       await sendEmail.sendEmail(responseData.email, "Verify Email", message);
 
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
