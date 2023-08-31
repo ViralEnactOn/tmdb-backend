@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const commentMovieSchema = db.schema.createTable("user_comment", (table) => {
+const userCommentSchema = db.schema.createTable("user_comment", (table) => {
   table.increments("id");
   table.integer("movie_id").unsigned();
   table.integer("parent_comment_id").unsigned();
@@ -12,4 +12,4 @@ const commentMovieSchema = db.schema.createTable("user_comment", (table) => {
   table.timestamp("updated_at").defaultTo(db.fn.now());
 });
 
-module.exports = { commentMovieSchema };
+module.exports = { userCommentSchema };

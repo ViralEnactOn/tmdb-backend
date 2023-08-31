@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const watchlistSchema = db.schema.createTable("user_watch_list", (table) => {
+const userWatchListSchema = db.schema.createTable("user_watch_list", (table) => {
   table.increments("id");
   table.string("name");
   table.integer("user_id").unsigned(); // Adding foreign key column
@@ -12,4 +12,4 @@ const watchlistSchema = db.schema.createTable("user_watch_list", (table) => {
   table.timestamp("updated_at").defaultTo(db.fn.now());
 });
 
-module.exports = { watchlistSchema };
+module.exports = { userWatchListSchema };

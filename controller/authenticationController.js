@@ -1,9 +1,7 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config/config");
 const { userSchema } = require("../schema/userSchema");
-const {
-  userFavoriteMovieSchema,
-} = require("../schema/userFavoriteMovieSchema");
+const { userFavoriteMovieSchema } = require("../schema/userFavoriteListSchema");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../config/sendMail");
 const sendResponse = require("../config/responseUtil");
