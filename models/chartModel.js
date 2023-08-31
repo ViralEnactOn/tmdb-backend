@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const movie_detail_chart = async (genres_id, threeYearsAgo) => {
+const movieDetailChart = async (genres_id, threeYearsAgo) => {
   const movie = await db("movie")
     .select(
       db.raw(
@@ -18,7 +18,7 @@ const movie_detail_chart = async (genres_id, threeYearsAgo) => {
   return movie;
 };
 
-const movie_revenue = async () => {
+const movieRevenue = async () => {
   const movie = await db("movie").select(
     "id",
     "title",
@@ -30,7 +30,7 @@ const movie_revenue = async () => {
   return movie;
 };
 
-const movie_revenue_country_wise = async (country) => {
+const movieRevenueCountryWise = async (country) => {
   const movie = await db("movie")
     .sum("revenue as total_revenue")
     .whereRaw(`JSON_CONTAINS(production_countries, ?)`, [`["${country}"]`]);
@@ -38,7 +38,7 @@ const movie_revenue_country_wise = async (country) => {
   return movie;
 };
 
-const movie_genres_rating = async (genres_id) => {
+const movieGenresRating = async (genres_id) => {
   const movie = await db("movie")
     .select("*")
     .whereRaw("genre_ids LIKE ?", `%${genres_id}%`)
@@ -47,8 +47,8 @@ const movie_genres_rating = async (genres_id) => {
 };
 
 module.exports = {
-  movie_detail_chart,
-  movie_revenue,
-  movie_revenue_country_wise,
-  movie_genres_rating,
+  movieDetailChart,
+  movieRevenue,
+  movieRevenueCountryWise,
+  movieGenresRating,
 };

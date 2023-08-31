@@ -2,7 +2,7 @@ const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const chartModel = require("../models/chartModel");
 
-const movie_chart = async (req, res) => {
+const movieDetailChart = async (req, res) => {
   const { genres_id } = req.body;
   const currentDate = new Date();
   const threeYearsAgo = new Date(
@@ -11,7 +11,7 @@ const movie_chart = async (req, res) => {
     currentDate.getDate()
   );
   try {
-    const releaseCounts = await chartModel.movie_detail_chart(
+    const releaseCounts = await chartModel.movieDetailChart(
       genres_id,
       threeYearsAgo
     );
@@ -29,9 +29,9 @@ const movie_chart = async (req, res) => {
   }
 };
 
-const movie_profit_loss = async (req, res) => {
+const movieRevenue = async (req, res) => {
   try {
-    const revenue = await chartModel.movie_revenue();
+    const revenue = await chartModel.movieRevenue();
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       revenue: revenue,
     });
@@ -45,10 +45,10 @@ const movie_profit_loss = async (req, res) => {
   }
 };
 
-const movie_country_revenue = async (req, res) => {
+const movieRevenueCountryWise = async (req, res) => {
   try {
     const { country } = req.body;
-    const revenue = await chartModel.movie_revenue_country_wise(country);
+    const revenue = await chartModel.movieRevenueCountryWise(country);
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       county_revenue: revenue,
     });
@@ -62,12 +62,12 @@ const movie_country_revenue = async (req, res) => {
   }
 };
 
-const genres_rating = async (req, res) => {
+const movieGenresRating = async (req, res) => {
   const { genres_id } = req.body;
 
   try {
     // c. Show genere wise vote_average in the list
-    const response = await chartModel.movie_genres_rating(genres_id);
+    const response = await chartModel.movieGenresRating(genres_id);
 
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       movies: response,
@@ -83,8 +83,8 @@ const genres_rating = async (req, res) => {
 };
 
 module.exports = {
-  movie_chart,
-  movie_profit_loss,
-  movie_country_revenue,
-  genres_rating,
+  movieDetailChart,
+  movieRevenue,
+  movieRevenueCountryWise,
+  movieGenresRating,
 };
