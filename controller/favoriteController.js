@@ -1,7 +1,7 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const favoriteModel = require("../models/favoriteModel");
-const movieModel = require("../models/movieModel");
+const { favoriteModel } = require("../models/index");
+const { movieModel } = require("../models/index");
 
 const insert = async (req, res) => {
   const { type, items } = req.body;

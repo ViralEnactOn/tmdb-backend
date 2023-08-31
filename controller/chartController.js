@@ -1,6 +1,6 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const chartModel = require("../models/chartModel");
+const { chartModel } = require("../models/index");
 
 const movieDetailChart = async (req, res) => {
   const { genres_id } = req.body;

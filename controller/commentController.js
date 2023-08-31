@@ -1,6 +1,6 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const commentModel = require("../models/commentModel");
+const { commentModel } = require("../models/index");
 
 const insert = async (req, res) => {
   const { movie_id, comment, parent_comment_id } = req.body;
@@ -26,7 +26,6 @@ const insert = async (req, res) => {
     );
   }
 };
-
 
 module.exports = {
   insert,

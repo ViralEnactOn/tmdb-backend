@@ -1,6 +1,6 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const ratingModel = require("../models/ratingModel");
+const { ratingModel } = require("../models/index");
 
 const insert = async (req, res) => {
   const { movie_id, type, rating } = req.body;

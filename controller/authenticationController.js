@@ -6,7 +6,7 @@ const sendEmail = require("../config/sendMail");
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const path = require("path");
-const authenticationModel = require("../models/authenticationModel");
+const { authenticationModel } = require("../models/index");
 
 const encryptPassword = async (password) => {
   try {

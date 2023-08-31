@@ -1,6 +1,6 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const movieModel = require("../models/movieModel");
+const { movieModel } = require("../models/index");
 const getAll = async (req, res) => {
   try {
     const response = await movieModel.getAll();

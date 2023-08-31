@@ -1,7 +1,6 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const watchListModel = require("../models/watchlistModel");
-const movieModel = require("../models/movieModel");
+const { watchListModel, movieModel } = require("../models/index");
 
 const insert = async (req, res) => {
   const { name, isPublic } = req.body;

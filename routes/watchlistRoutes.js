@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const watchlistController = require("../controller/watchlistController");
+const { watchListController } = require("../controller/index");
 const {
   authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
@@ -9,34 +9,34 @@ const {
 router.post(
   "/insert",
   authenticationUserMiddleware,
-  watchlistController.insert
+  watchListController.insert
 );
 router.post(
   "/update",
   authenticationUserMiddleware,
-  watchlistController.update
+  watchListController.update
 );
 router.post(
   "/remove",
   authenticationUserMiddleware,
-  watchlistController.remove
+  watchListController.remove
 );
-router.post("/fetch", authenticationUserMiddleware, watchlistController.fetch);
+router.post("/fetch", authenticationUserMiddleware, watchListController.fetch);
 
 // Inside watch list movie CRUD
 router.post(
   "/insertmovie",
   authenticationUserMiddleware,
-  watchlistController.insertMovie
+  watchListController.insertMovie
 );
 router.post(
   "/removemovie",
   authenticationUserMiddleware,
-  watchlistController.removeMovie
+  watchListController.removeMovie
 );
 router.get(
   "/fetchmovie/watch_list_id=:watch_list_id/isPublic=:isPublic/user_id=:user_id",
-  watchlistController.fetchMovie
+  watchListController.fetchMovie
 );
 
 module.exports = router;
