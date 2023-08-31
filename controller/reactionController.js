@@ -3,7 +3,7 @@ const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const {
   verifyUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
-const { reactionSchema } = require("../schema/reactionSchema");
+const { reactionSchema } = require("../schema/userReactionSchema");
 const reactionModel = require("../models/reactionModel");
 
 const insert_reaction = async (req, res) => {

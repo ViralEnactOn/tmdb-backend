@@ -125,7 +125,6 @@ const forgotEmail = async (email, subject, text) => {
       </html>
       `,
     });
-    console.log("email sent sucessfully");
   } catch (error) {
     console.log("email not sent");
     console.log(error);

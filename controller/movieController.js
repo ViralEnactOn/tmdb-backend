@@ -1,7 +1,7 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const { commentMovieSchema } = require("../schema/commentMovieSchema");
-const { likeMovieSchema } = require("../schema/likeMovieSchema");
+const { commentMovieSchema } = require("../schema/userCommentSchema");
+const { likeMovieSchema } = require("../schema/userRatingSchema");
 const movieModel = require("../models/movieModel");
 const get_movie_list = async (req, res) => {
   try {

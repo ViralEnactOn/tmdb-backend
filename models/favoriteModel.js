@@ -1,17 +1,30 @@
 const db = require("../config/db");
 
-const insert_record = async (id, type, items) => {
-  const favorite = await db("user_favorite_movie")
-    .where({ user_id: id })
-    .update({
+const insert_record = async (user, type, items) => {
+  const existingRecord = await db("user_favorite_movie")
+    .where({ user_id: user.id })
+    .first();
+
+  if (existingRecord) {
+    const updatedFavorite = await db("user_favorite_movie")
+      .where({ user_id: user.id })
+      .update({
+        type: type,
+        items: db.raw(
+          `JSON_ARRAY_APPEND(COALESCE(items, JSON_ARRAY()), '$', ?)`,
+          [items]
+        ),
+        updated_at: db.fn.now(),
+      });
+    return updatedFavorite;
+  } else {
+    const newFavorite = await db("user_favorite_movie").insert({
+      user_id: user.id,
       type: type,
-      items: db.raw(
-        `JSON_ARRAY_APPEND(COALESCE(items, JSON_ARRAY()), '$', ?)`,
-        [items]
-      ),
-      updated_at: db.fn.now(),
+      items: db.raw(`JSON_ARRAY(?)`, [items]),
     });
-  return favorite;
+    return newFavorite;
+  }
 };
 
 const find_record = async (id) => {

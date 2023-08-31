@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
+const { default: jwtDecode } = require("jwt-decode");
 const config = require("../config/config");
-const { userSchema } = require("../schema/userSchema");
-const { userFavoriteMovieSchema } = require("../schema/userFavoriteListSchema");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../config/sendMail");
 const sendResponse = require("../config/responseUtil");
@@ -20,76 +19,75 @@ const encryptPassword = async (password) => {
   }
 };
 
-const insertFavorite = async (userId) => {
-  try {
-    const exists = await authenticationModel.favorite_exist();
-
-    if (!exists) {
-      await userFavoriteMovieSchema.then(() => {
-        return authenticationModel.insert_favorite(userId);
-      });
-    } else {
-      return authenticationModel.insert_favorite(userId);
-    }
-  } catch (error) {
-    throw error;
-  }
-};
+// Perfect
 const register_user = async (req, res) => {
   const { name, email, password } = req.body;
   let hashedPassword = await encryptPassword(password);
-  const token = jwt.sign({ email: email, name: name }, config.jwt.secret_key);
-  const insertUser = async () => {
-    try {
-      // Check if user with the given email exists
-      let userData = await authenticationModel.check_user(email);
-      console.log({ userData });
-      if (userData !== undefined) {
-        return sendResponse(
-          res,
-          StatusCodes.BAD_REQUEST,
-          ReasonPhrases.BAD_REQUEST,
-          {
-            message: `User with the given email already exists!`,
-          }
-        );
-      }
-
-      // Insert the user
-      await authenticationModel.insert_user(name, email, hashedPassword, token); //TODO: Remove token from here
-
-      // Get the inserted user's data
-      const responseData = await authenticationModel.check_user(email); //TODO: Rename check_user to get_user
-      console.log(responseData);
-      await insertFavorite(responseData.id); //TODO: Remove this from here, and create separate controller as UserController to have such method
-
-      // Send verification email
-      const message = `${config.app.base_url}/user/verify/${responseData.id}/${responseData.token}`; //TODO: Pass only token. in token store id and email
-      await sendEmail.sendEmail(responseData.email, "Verify Email", message);
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        authentication: `A verification email has been sent to ${responseData.email}`,
-      });
-    } catch (error) {
-      sendResponse(
+  try {
+    let userData = await authenticationModel.get_user(email);
+    if (userData !== undefined) {
+      return sendResponse(
         res,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        ReasonPhrases.INTERNAL_SERVER_ERROR,
-        error.message
+        StatusCodes.BAD_REQUEST,
+        ReasonPhrases.BAD_REQUEST,
+        {
+          message: `User with the given email already exists!`,
+        }
       );
     }
-  };
+
+    // Insert the user
+    await authenticationModel.insert_user(name, email, hashedPassword); //TODO: Remove token from here
+
+    // Get the inserted user's data
+    const responseData = await authenticationModel.get_user(email); //TODO: Rename check_user to get_user
+
+    const token = jwt.sign(
+      {
+        email: responseData.email,
+        name: responseData.name,
+        id: responseData.id,
+      },
+      config.jwt.secret_key,
+      {
+        expiresIn: "2h",
+      }
+    );
+
+    // Send verification email
+    const message = `${config.app.base_url}/user/verify/${token}`; //TODO: Pass only token. in token store id and email
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      authentication: `A verification email has been sent to ${responseData.email}`,
+    });
+    await sendEmail.sendEmail(responseData.email, "Verify Email", message);
+  } catch (error) {
+    sendResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      ReasonPhrases.INTERNAL_SERVER_ERROR,
+      error.message
+    );
+  }
+};
+
+// Perfect
+const validate_user = async (req, res) => {
+  const { token } = req.params;
+  const decode = jwtDecode(token);
   try {
-    // Check if the user table exists
-    const tableExists = await authenticationModel.user_exist();
-    if (!tableExists) {
-      // If the table doesn't exist, create it
-      await userSchema.then(() => {
-        insertUser();
-      });
+    const user = authenticationModel.verify_user(decode);
+
+    if (!user) {
+      return sendResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        ReasonPhrases.BAD_REQUEST,
+        `Invalid link`
+      );
     } else {
-      // If the table already exists, directly insert the user
-      await insertUser();
+      return sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: "User verified successfully",
+      });
     }
   } catch (error) {
     sendResponse(
@@ -101,25 +99,44 @@ const register_user = async (req, res) => {
   }
 };
 
-const validate_user = async (req, res) => {
-  const { id, token } = req.params;
+// Perfect
+const login_user = async (req, res) => {
+  const { email, password } = req.body;
 
   try {
-    const user = authenticationModel.verify_user(id, token);
+    const user = await authenticationModel.login_user(email);
 
-    if (!user) {
-      return sendResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        ReasonPhrases.BAD_REQUEST,
-        `Invalid link`
-      );
+    if (!user || user.length === 0) {
+      sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
+        message: "Invalid email!",
+      });
+      return;
     }
 
-    await authenticationModel.verified_user(id);
+    const passwordMatches = await bcrypt.compare(password, user.password);
 
-    return sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-      message: "User verified successfully",
+    if (!passwordMatches) {
+      sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
+        message: "Invalid password!",
+      });
+      return;
+    }
+
+    const token = jwt.sign(
+      {
+        email: user.email,
+        name: user.name,
+        id: user.id,
+      },
+      config.jwt.secret_key,
+      {
+        expiresIn: "2h",
+      }
+    );
+
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      user: user,
+      token: token,
     });
   } catch (error) {
     sendResponse(
@@ -131,57 +148,37 @@ const validate_user = async (req, res) => {
   }
 };
 
-const login_user = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await authenticationModel.login_user(email);
-    const passwordMatches = await bcrypt.compare(password, user.password);
-    if (!passwordMatches || user.length === 0) {
-      sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
-        message: "Invalid email or password!",
-      });
-    } else {
-      const token = jwt.sign(
-        { id: user.id, email: user.email, name: user.name },
-        config.jwt.secret_key
-      );
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        user: user,
-        token: token,
-      });
-    }
-  } catch (error) {
-    sendResponse(
-      res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
-    );
-  }
-};
-
+// Perfect
 const forgot_password = async (req, res) => {
   try {
     const { email } = req.body;
-    const updateResponse = req.user;
+    const updateResponse = await authenticationModel.get_user(email);
+    console.log({ updateResponse });
     if (!updateResponse) {
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
         message: `This ${email} does not exist or is not verified`,
       });
     } else {
-      const resetPasswordUrl = `${config.app.base_url}/user/reset_password/id=${updateResponse.id}/token=${updateResponse.token}`;
-
+      const token = jwt.sign(
+        {
+          email: updateResponse.email,
+          name: updateResponse.name,
+          id: updateResponse.id,
+        },
+        config.jwt.secret_key,
+        {
+          expiresIn: "2h",
+        }
+      );
+      const resetPasswordUrl = `${config.app.base_url}/user/reset_password/token=${token}`;
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        message: `A forgot password email has been sent to ${updateResponse.email}`,
+      });
       await sendEmail.forgotEmail(
         updateResponse.email,
         "Forgot Password",
         resetPasswordUrl
       );
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `A forgot password email has been sent to ${updateResponse.email}`,
-      });
     }
   } catch (error) {
     sendResponse(
@@ -199,22 +196,25 @@ const reset_password_template = (req, res) => {
 
 const reset_password = async (req, res) => {
   try {
-    const { password, token, id } = req.body;
+    const { token, password } = req.body;
+    const decode = jwtDecode(token);
+    console.log({ decode });
     const hashedPassword = await encryptPassword(password);
 
     const updateResponse = await authenticationModel.reset_user_password(
-      id,
-      token,
+      decode.id,
+      decode.email,
+      decode.name,
       hashedPassword
     );
 
     if (updateResponse === 0) {
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `The password for ${req.user.email} could not be changed.`,
+        message: `The password for ${decode.email} could not be changed.`,
       });
     } else {
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `The password for ${req.user.email} has been successfully changed.`,
+        message: `The password for ${decode.email} has been successfully changed.`,
       });
     }
   } catch (error) {

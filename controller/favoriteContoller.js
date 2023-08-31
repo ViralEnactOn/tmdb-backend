@@ -5,13 +5,10 @@ const movieModel = require("../models/movieModel");
 
 const insert_favorite = async (req, res) => {
   const { type, items } = req.body;
+  const user = req.user;
   try {
-    const updateResult = await favoriteModel.insert_record(
-      req.user.id,
-      type,
-      items
-    );
-    if (updateResult === 0) {
+    const insertResult = await favoriteModel.insert_record(user, type, items);
+    if (insertResult === 0) {
       return sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
         message: "Favorite list entry not found",
       });
