@@ -20,7 +20,7 @@ const encryptPassword = async (password) => {
 };
 
 // Perfect
-const register_user = async (req, res) => {
+const register = async (req, res) => {
   const { name, email, password } = req.body;
   let hashedPassword = await encryptPassword(password);
   try {
@@ -37,7 +37,7 @@ const register_user = async (req, res) => {
     }
 
     // Insert the user
-    await authenticationModel.insert_user(name, email, hashedPassword); //TODO: Remove token from here
+    await authenticationModel.insert(name, email, hashedPassword); //TODO: Remove token from here
 
     // Get the inserted user's data
     const responseData = await authenticationModel.get_user(email); //TODO: Rename check_user to get_user
@@ -71,11 +71,11 @@ const register_user = async (req, res) => {
 };
 
 // Perfect
-const validate_user = async (req, res) => {
+const verify = async (req, res) => {
   const { token } = req.params;
   const decode = jwtDecode(token);
   try {
-    const user = authenticationModel.verify_user(decode);
+    const user = authenticationModel.verify(decode);
 
     if (!user) {
       return sendResponse(
@@ -100,11 +100,11 @@ const validate_user = async (req, res) => {
 };
 
 // Perfect
-const login_user = async (req, res) => {
+const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await authenticationModel.login_user(email);
+    const user = await authenticationModel.login(email);
 
     if (!user || user.length === 0) {
       sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
@@ -149,7 +149,7 @@ const login_user = async (req, res) => {
 };
 
 // Perfect
-const forgot_password = async (req, res) => {
+const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const updateResponse = await authenticationModel.get_user(email);
@@ -189,17 +189,17 @@ const forgot_password = async (req, res) => {
   }
 };
 
-const reset_password_template = (req, res) => {
+const resetPasswordTemplate = (req, res) => {
   return res.sendFile(path.resolve("./public/reset-password.html"));
 };
 
-const reset_password = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
     const decode = jwtDecode(token);
     const hashedPassword = await encryptPassword(password);
 
-    const updateResponse = await authenticationModel.reset_user_password(
+    const updateResponse = await authenticationModel.resetPassword(
       decode.id,
       decode.email,
       decode.name,
@@ -226,10 +226,10 @@ const reset_password = async (req, res) => {
 };
 
 module.exports = {
-  register_user,
-  validate_user,
-  login_user,
-  forgot_password,
-  reset_password_template,
-  reset_password,
+  register,
+  verify,
+  login,
+  forgotPassword,
+  resetPasswordTemplate,
+  resetPassword,
 };

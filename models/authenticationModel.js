@@ -5,7 +5,7 @@ const get_user = async (email) => {
   return user;
 };
 
-const insert_user = async (name, email, hashedPassword) => {
+const insert = async (name, email, hashedPassword) => {
   const user = await db("user").insert({
     name: name,
     email: email,
@@ -15,12 +15,12 @@ const insert_user = async (name, email, hashedPassword) => {
   return user;
 };
 
-const login_user = async (email) => {
+const login = async (email) => {
   const user = await db("user").where({ email: email }).first();
   return user;
 };
 
-const verify_user = async (decode) => {
+const verify = async (decode) => {
   const user = await db("user")
     .where({
       id: decode.id,
@@ -35,7 +35,7 @@ const verify_user = async (decode) => {
   return user;
 };
 
-const reset_user_password = async (id, email, name, hashedPassword) => {
+const resetPassword = async (id, email, name, hashedPassword) => {
   const user = await db("user")
     .where({ id: id, name: name, email: email })
     .update({ password: hashedPassword, updated_at: db.fn.now() });
@@ -44,8 +44,8 @@ const reset_user_password = async (id, email, name, hashedPassword) => {
 
 module.exports = {
   get_user,
-  insert_user,
-  login_user,
-  verify_user,
-  reset_user_password,
+  insert,
+  login,
+  verify,
+  resetPassword,
 };
