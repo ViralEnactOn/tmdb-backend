@@ -153,7 +153,6 @@ const forgot_password = async (req, res) => {
   try {
     const { email } = req.body;
     const updateResponse = await authenticationModel.get_user(email);
-    console.log({ updateResponse });
     if (!updateResponse) {
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
         message: `This ${email} does not exist or is not verified`,
@@ -198,7 +197,6 @@ const reset_password = async (req, res) => {
   try {
     const { token, password } = req.body;
     const decode = jwtDecode(token);
-    console.log({ decode });
     const hashedPassword = await encryptPassword(password);
 
     const updateResponse = await authenticationModel.reset_user_password(

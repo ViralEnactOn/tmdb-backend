@@ -1,13 +1,4 @@
 const db = require("../config/db");
-const user_rating_exist = async () => {
-  const movie = await db.schema.hasTable("user_rating");
-  return movie;
-};
-
-const user_comment_exist = async () => {
-  const movie = await db.schema.hasTable("user_comment");
-  return movie;
-};
 
 const all_movie_details = async () => {
   const movie = await db.from("movie");
@@ -111,8 +102,6 @@ const movie_revenue_country_wise = async (country) => {
 };
 
 module.exports = {
-  user_rating_exist,
-  user_comment_exist,
   all_movie_details,
   movie_details,
   pagination_movie_details,

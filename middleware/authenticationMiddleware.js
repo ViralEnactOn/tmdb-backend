@@ -4,16 +4,14 @@ const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
 
 const authenticationUserMiddleware = async (req, res, next) => {
-  const { email, token } = req.body;
+  const { token } = req.body;
   let decode;
   if (token) {
     decode = jwtDecode(token);
   }
 
   try {
-    const user = await db("user")
-      .where({ email: email || decode.email })
-      .first();
+    const user = await db("user").where({ email: decode.email }).first();
 
     if (!user) {
       return sendResponse(

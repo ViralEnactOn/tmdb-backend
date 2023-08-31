@@ -1,10 +1,5 @@
 const db = require("../config/db");
 
-const user_watch_list_exist = async () => {
-  const watch_list = await db.schema.hasTable("user_watch_list");
-  return watch_list;
-};
-
 const insert_user_watch_list = async (id, name, isPublic) => {
   const watch_list = await db("user_watch_list").insert({
     name: name,
@@ -54,6 +49,7 @@ const insert_movie_watch_list = async (id, user_id, movie_id) => {
   const watch_list = await db("user_watch_list")
     .where({ id: id })
     .where({ user_id: user_id })
+    .where({ isDeleted: false })
     .update({
       movies: db.raw(
         `JSON_ARRAY_APPEND(COALESCE(movies, JSON_ARRAY()), '$', ?)`,
@@ -64,14 +60,14 @@ const insert_movie_watch_list = async (id, user_id, movie_id) => {
   return watch_list;
 };
 
-const delete_movie_watch_list = async (id, user_id, watch_list_id) => {
+const delete_movie_watch_list = async (id, user_id, movie_id) => {
   const watch_list = await db("user_watch_list")
     .where("id", id)
     .where({ user_id: user_id })
     .update({
       movies: db.raw(
         `JSON_REMOVE(COALESCE(movies, '[]'), JSON_UNQUOTE(JSON_SEARCH(COALESCE(movies, '[]'), 'one', ?)))`,
-        [watch_list_id]
+        [movie_id]
       ),
       updated_at: db.fn.now(),
     });
@@ -91,7 +87,6 @@ const fetch_movie_watch_list = async (user_id, watch_list_id, isPublic) => {
 };
 
 module.exports = {
-  user_watch_list_exist,
   insert_user_watch_list,
   update_user_watch_list,
   delete_user_watch_list,

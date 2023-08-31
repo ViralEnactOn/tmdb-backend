@@ -10,40 +10,21 @@ const insert_reaction = async (req, res) => {
   const { movie_id, type } = req.body;
 
   try {
-    const movie_reaction = async () => {
-      try {
-        const user_reaction = await reactionModel.find_record(
-          req.user.id,
-          movie_id
-        );
-        if (user_reaction.length === 0) {
-          await reactionModel.insert_record(req.user.id, movie_id, type);
+    const user_reaction = await reactionModel.find_record(
+      req.user.id,
+      movie_id
+    );
+    if (user_reaction.length === 0) {
+      await reactionModel.insert_record(req.user.id, movie_id, type);
 
-          sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-            reaction: "Reaction inserted successfully",
-          });
-        } else {
-          await reactionModel.update_record(req.user.id, movie_id, type);
-          sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-            reaction: "Reaction updated successfully",
-          });
-        }
-      } catch (error) {
-        sendResponse(
-          res,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-          ReasonPhrases.INTERNAL_SERVER_ERROR,
-          error.message
-        );
-      }
-    };
-    const exists = await reactionModel.user_reaction_exist();
-    if (!exists) {
-      await reactionSchema.then(async (response) => {
-        await movie_reaction();
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        reaction: "Reaction inserted successfully",
       });
     } else {
-      await movie_reaction();
+      await reactionModel.update_record(req.user.id, movie_id, type);
+      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+        reaction: "Reaction updated successfully",
+      });
     }
   } catch (error) {
     sendResponse(

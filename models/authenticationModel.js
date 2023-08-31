@@ -1,12 +1,5 @@
 const db = require("../config/db");
 
-const insert_favorite = async (userId) => {
-  const user = await db("user_favorite_movie").insert({
-    user_id: userId,
-  });
-  return user;
-};
-
 const get_user = async (email) => {
   const user = await db("user").where({ email: email }).first();
   return user;
@@ -50,7 +43,6 @@ const reset_user_password = async (id, email, name, hashedPassword) => {
 };
 
 module.exports = {
-  insert_favorite,
   get_user,
   insert_user,
   login_user,

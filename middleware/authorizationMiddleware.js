@@ -4,14 +4,14 @@ const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
 
 const authorizationMiddleware = async (req, res, next) => {
-  const { email, token } = req.body;
+  const { token } = req.body;
   let decode;
   if (token) {
     decode = jwtDecode(token);
   }
   try {
     const user = await db("user")
-      .where({ email: email || decode.email })
+      .where({ email: decode.email })
       .where({ isVerified: true })
       .first();
 

@@ -1,38 +1,16 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const { default: jwtDecode } = require("jwt-decode");
-const { watchlistSchema } = require("../schema/userWatchListSchema");
 const watchlistModel = require("../models/watchlistModel");
 const movieModel = require("../models/movieModel");
 
 const insert_watch_list = async (req, res) => {
   const { name, isPublic } = req.body;
-  const insertWatchList = async () => {
-    try {
-      await watchlistModel.insert_user_watch_list(req.user.id, name, isPublic);
-
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: "New watch list operation successful",
-      });
-    } catch (error) {
-      sendResponse(
-        res,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        ReasonPhrases.INTERNAL_SERVER_ERROR,
-        error.message
-      );
-    }
-  };
-
   try {
-    const tableExists = await watchlistModel.user_watch_list_exist();
-    if (!tableExists) {
-      await watchlistSchema.then(() => {
-        insertWatchList();
-      });
-    } else {
-      await insertWatchList();
-    }
+    await watchlistModel.insert_user_watch_list(req.user.id, name, isPublic);
+
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: "New watch list operation successful",
+    });
   } catch (error) {
     sendResponse(
       res,
@@ -150,12 +128,12 @@ const insert_movie = async (req, res) => {
 };
 
 const delete_movie = async (req, res) => {
-  const { id, watch_list_id } = req.body;
+  const { id, movie_id } = req.body;
   try {
     const updateResult = await watchlistModel.delete_movie_watch_list(
       id,
       req.user.id,
-      watch_list_id
+      movie_id
     );
 
     if (updateResult === 0) {

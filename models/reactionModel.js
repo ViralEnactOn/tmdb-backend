@@ -1,9 +1,5 @@
 const db = require("../config/db");
 
-const user_reaction_exist = async () => {
-  const reaction = await db.schema.hasTable("user_reaction");
-  return reaction;
-};
 
 const find_record = async (id, movie_id) => {
   const reaction = await db("user_reaction").where({
@@ -43,7 +39,6 @@ const delete_record = async (id, movie_id) => {
 };
 
 module.exports = {
-  user_reaction_exist,
   find_record,
   insert_record,
   update_record,
