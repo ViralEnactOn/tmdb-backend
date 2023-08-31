@@ -38,7 +38,7 @@ const fetch_favorite = async (req, res) => {
       const movieIds = JSON.parse(watchlist.items);
 
       // Fetch movie details for the IDs in the items array
-      const movieDetails = await movieModel.movie_details(movieIds);
+      const movieDetails = await movieModel.getDetails(movieIds);
 
       if (movieDetails.length > 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {

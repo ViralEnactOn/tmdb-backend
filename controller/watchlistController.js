@@ -166,7 +166,7 @@ const fetchMovie = async (req, res) => {
 
       const movieIds = JSON.parse(watchList.movies);
       // Fetch movie details for the IDs in the movies array
-      const movieDetails = await movieModel.movie_details(movieIds);
+      const movieDetails = await movieModel.getDetails(movieIds);
 
       if (movieDetails.length > 0) {
         sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {

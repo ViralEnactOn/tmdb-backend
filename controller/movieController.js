@@ -1,9 +1,9 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const movieModel = require("../models/movieModel");
-const get_movie_list = async (req, res) => {
+const getAll = async (req, res) => {
   try {
-    const response = await movieModel.all_movie_details();
+    const response = await movieModel.getAll();
 
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       movies: response,
@@ -18,11 +18,11 @@ const get_movie_list = async (req, res) => {
   }
 };
 
-const movie = async (req, res) => {
+const pagination = async (req, res) => {
   try {
     const { page } = req.query;
     const limit = 20;
-    const response = await movieModel.pagination_movie_details(page, limit);
+    const response = await movieModel.pagination(page, limit);
 
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       movies: response,
@@ -38,6 +38,6 @@ const movie = async (req, res) => {
 };
 
 module.exports = {
-  get_movie_list,
-  movie,
+  getAll,
+  pagination,
 };
