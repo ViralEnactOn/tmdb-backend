@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const insert_user_watch_list = async (id, name, isPublic) => {
+const insert = async (id, name, isPublic) => {
   const watch_list = await db("user_watch_list").insert({
     name: name,
     user_id: id,
@@ -9,7 +9,7 @@ const insert_user_watch_list = async (id, name, isPublic) => {
   return watch_list;
 };
 
-const update_user_watch_list = async (id, user_id, name, isPublic) => {
+const update = async (id, user_id, name, isPublic) => {
   const watch_list = await db("user_watch_list")
     .where({ user_id: user_id, id: id })
     .update({
@@ -20,7 +20,7 @@ const update_user_watch_list = async (id, user_id, name, isPublic) => {
   return watch_list;
 };
 
-const delete_user_watch_list = async (id, user_id) => {
+const remove = async (id, user_id) => {
   const watch_list = await db("user_watch_list")
     .where({ user_id: user_id, id: id })
     .update({
@@ -30,7 +30,7 @@ const delete_user_watch_list = async (id, user_id) => {
   return watch_list;
 };
 
-const fetch_user_watch_list = async (id) => {
+const fetch = async (id) => {
   const watch_list = await db
     .select(
       "user_watch_list.id as user_watch_list_id",
@@ -45,7 +45,7 @@ const fetch_user_watch_list = async (id) => {
   return watch_list;
 };
 
-const insert_movie_watch_list = async (id, user_id, movie_id) => {
+const insertMovie = async (id, user_id, movie_id) => {
   const watch_list = await db("user_watch_list")
     .where({ id: id })
     .where({ user_id: user_id })
@@ -60,7 +60,7 @@ const insert_movie_watch_list = async (id, user_id, movie_id) => {
   return watch_list;
 };
 
-const delete_movie_watch_list = async (id, user_id, movie_id) => {
+const removeMovie = async (id, user_id, movie_id) => {
   const watch_list = await db("user_watch_list")
     .where("id", id)
     .where({ user_id: user_id })
@@ -74,7 +74,7 @@ const delete_movie_watch_list = async (id, user_id, movie_id) => {
   return watch_list;
 };
 
-const fetch_movie_watch_list = async (user_id, watch_list_id, isPublic) => {
+const fetchMovie = async (user_id, watch_list_id, isPublic) => {
   const watch_list = await db("user_watch_list")
     .where({
       id: watch_list_id,
@@ -87,11 +87,11 @@ const fetch_movie_watch_list = async (user_id, watch_list_id, isPublic) => {
 };
 
 module.exports = {
-  insert_user_watch_list,
-  update_user_watch_list,
-  delete_user_watch_list,
-  fetch_user_watch_list,
-  insert_movie_watch_list,
-  delete_movie_watch_list,
-  fetch_movie_watch_list,
+  insert,
+  update,
+  remove,
+  fetch,
+  insertMovie,
+  removeMovie,
+  fetchMovie,
 };

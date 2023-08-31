@@ -9,38 +9,34 @@ const {
 router.post(
   "/insert",
   authenticationUserMiddleware,
-  watchlistController.insert_watch_list
+  watchlistController.insert
 );
 router.post(
   "/update",
   authenticationUserMiddleware,
-  watchlistController.update_watch_list
+  watchlistController.update
 );
 router.post(
-  "/delete",
+  "/remove",
   authenticationUserMiddleware,
-  watchlistController.delete_watch_list
+  watchlistController.remove
 );
-router.post(
-  "/fetch",
-  authenticationUserMiddleware,
-  watchlistController.fetch_watch_list
-);
+router.post("/fetch", authenticationUserMiddleware, watchlistController.fetch);
 
 // Inside watch list movie CRUD
 router.post(
   "/insertmovie",
   authenticationUserMiddleware,
-  watchlistController.insert_movie
+  watchlistController.insertMovie
 );
 router.post(
-  "/deletemovie",
+  "/removemovie",
   authenticationUserMiddleware,
-  watchlistController.delete_movie
+  watchlistController.removeMovie
 );
 router.get(
   "/fetchmovie/watch_list_id=:watch_list_id/isPublic=:isPublic/user_id=:user_id",
-  watchlistController.fetch_movie
+  watchlistController.fetchMovie
 );
 
 module.exports = router;

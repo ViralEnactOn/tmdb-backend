@@ -1,12 +1,12 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const watchlistModel = require("../models/watchlistModel");
+const watchListModel = require("../models/watchlistModel");
 const movieModel = require("../models/movieModel");
 
-const insert_watch_list = async (req, res) => {
+const insert = async (req, res) => {
   const { name, isPublic } = req.body;
   try {
-    await watchlistModel.insert_user_watch_list(req.user.id, name, isPublic);
+    await watchListModel.insert(req.user.id, name, isPublic);
 
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       message: "New watch list operation successful",
@@ -21,11 +21,11 @@ const insert_watch_list = async (req, res) => {
   }
 };
 
-const update_watch_list = async (req, res) => {
+const update = async (req, res) => {
   const { id, name, isPublic } = req.body;
 
   try {
-    const updatedWatchList = await watchlistModel.update_user_watch_list(
+    const updatedWatchList = await watchListModel.update(
       id,
       req.user.id,
       name,
@@ -51,13 +51,10 @@ const update_watch_list = async (req, res) => {
   }
 };
 
-const delete_watch_list = async (req, res) => {
+const remove = async (req, res) => {
   const { id } = req.body;
   try {
-    const deletedWatchList = await watchlistModel.delete_user_watch_list(
-      id,
-      req.user.id
-    );
+    const deletedWatchList = await watchListModel.remove(id, req.user.id);
 
     if (deletedWatchList === 1) {
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
@@ -78,11 +75,9 @@ const delete_watch_list = async (req, res) => {
   }
 };
 
-const fetch_watch_list = async (req, res) => {
+const fetch = async (req, res) => {
   try {
-    const watchListData = await watchlistModel.fetch_user_watch_list(
-      req.user.id
-    );
+    const watchListData = await watchListModel.fetch(req.user.id);
 
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       watch_list: watchListData,
@@ -98,11 +93,11 @@ const fetch_watch_list = async (req, res) => {
 };
 
 // Insert / Update movie in watch list
-const insert_movie = async (req, res) => {
+const insertMovie = async (req, res) => {
   const { movie_id, id } = req.body;
 
   try {
-    const updateResult = await watchlistModel.insert_movie_watch_list(
+    const updateResult = await watchListModel.insertMovie(
       id,
       req.user.id,
       movie_id
@@ -127,10 +122,10 @@ const insert_movie = async (req, res) => {
   }
 };
 
-const delete_movie = async (req, res) => {
+const removeMovie = async (req, res) => {
   const { id, movie_id } = req.body;
   try {
-    const updateResult = await watchlistModel.delete_movie_watch_list(
+    const updateResult = await watchListModel.removeMovie(
       id,
       req.user.id,
       movie_id
@@ -155,21 +150,21 @@ const delete_movie = async (req, res) => {
   }
 };
 
-const fetch_movie = async (req, res) => {
+const fetchMovie = async (req, res) => {
   const { watch_list_id, isPublic, user_id } = req.params;
   let watch_list = [];
 
   try {
-    const watchlist = await watchlistModel.fetch_movie_watch_list(
+    const watchList = await watchListModel.fetchMovie(
       user_id,
       watch_list_id,
       isPublic
     );
 
-    if (watchlist && watchlist.movies) {
-      watch_list.push(watchlist);
+    if (watchList && watchList.movies) {
+      watch_list.push(watchList);
 
-      const movieIds = JSON.parse(watchlist.movies);
+      const movieIds = JSON.parse(watchList.movies);
       // Fetch movie details for the IDs in the movies array
       const movieDetails = await movieModel.movie_details(movieIds);
 
@@ -199,11 +194,11 @@ const fetch_movie = async (req, res) => {
 };
 
 module.exports = {
-  insert_watch_list,
-  update_watch_list,
-  delete_watch_list,
-  fetch_watch_list,
-  insert_movie,
-  delete_movie,
-  fetch_movie,
+  insert,
+  update,
+  remove,
+  fetch,
+  insertMovie,
+  removeMovie,
+  fetchMovie,
 };
