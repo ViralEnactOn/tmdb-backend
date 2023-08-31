@@ -6,7 +6,7 @@ const insert = async (req, res) => {
   const { movie_id, type } = req.body;
 
   try {
-    const user_reaction = await reactionModel.find(req.user.id, movie_id);
+    const user_reaction = await reactionModel.fetch(req.user.id, movie_id);
     if (user_reaction.length === 0) {
       await reactionModel.insert(req.user.id, movie_id, type);
 

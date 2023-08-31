@@ -12,7 +12,7 @@ router.post(
   "/insert",
   authenticationUserMiddleware,
   authorizationMiddleware,
-  ratingController.movie_rating
+  ratingController.insert
 );
 
 module.exports = router;

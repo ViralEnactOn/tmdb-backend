@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const insert_record = async (user, type, items) => {
+const insert = async (user, type, items) => {
   const existingRecord = await db("user_favorite_list")
     .where({ user_id: user.id })
     .first();
@@ -27,14 +27,14 @@ const insert_record = async (user, type, items) => {
   }
 };
 
-const find_record = async (id) => {
+const fetch = async (id) => {
   const favorite = await db("user_favorite_list")
     .where({ user_id: id })
     .first();
   return favorite;
 };
 
-const delete_record = async (id, favorite_list_id) => {
+const remove = async (id, favorite_list_id) => {
   const favorite = await db("user_favorite_list")
     .where({ user_id: id })
     .update({
@@ -47,7 +47,7 @@ const delete_record = async (id, favorite_list_id) => {
   return favorite;
 };
 module.exports = {
-  insert_record,
-  find_record,
-  delete_record,
+  insert,
+  fetch,
+  remove,
 };

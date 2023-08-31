@@ -3,7 +3,7 @@ const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const favoriteModel = require("../models/favoriteModel");
 const movieModel = require("../models/movieModel");
 
-const insert_favorite = async (req, res) => {
+const insert = async (req, res) => {
   const { type, items } = req.body;
   const user = req.user;
   try {
@@ -26,11 +26,11 @@ const insert_favorite = async (req, res) => {
   }
 };
 
-const fetch_favorite = async (req, res) => {
+const fetch = async (req, res) => {
   // let watch_list = [];
 
   try {
-    const watchlist = await favoriteModel.find_record(req.user.id);
+    const watchlist = await favoriteModel.fetch(req.user.id);
 
     if (watchlist && watchlist.items) {
       // watch_list.push(watchlist);
@@ -65,10 +65,10 @@ const fetch_favorite = async (req, res) => {
   }
 };
 
-const delete_favorite = async (req, res) => {
+const remove = async (req, res) => {
   const { favorite_list_id } = req.body;
   try {
-    const updateResult = await favoriteModel.delete_record(
+    const updateResult = await favoriteModel.remove(
       req.user.id,
       favorite_list_id
     );
@@ -91,4 +91,4 @@ const delete_favorite = async (req, res) => {
     );
   }
 };
-module.exports = { insert_favorite, fetch_favorite, delete_favorite };
+module.exports = { insert, fetch, remove };

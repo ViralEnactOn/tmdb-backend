@@ -1,24 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const favoriteContoller = require("../controller/favoriteContoller");
+const favoriteController = require("../controller/favoriteController");
 const {
   authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
 
-router.post(
-  "/insert",
-  authenticationUserMiddleware,
-  favoriteContoller.insert_favorite
-);
-router.post(
-  "/fetch",
-  authenticationUserMiddleware,
-  favoriteContoller.fetch_favorite
-);
-router.post(
-  "/delete",
-  authenticationUserMiddleware,
-  favoriteContoller.delete_favorite
-);
+router.post("/insert", authenticationUserMiddleware, favoriteController.insert);
+router.post("/fetch", authenticationUserMiddleware, favoriteController.fetch);
+router.post("/delete", authenticationUserMiddleware, favoriteController.remove);
 
 module.exports = router;

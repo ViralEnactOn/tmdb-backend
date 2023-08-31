@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const find = async (id, movie_id) => {
+const fetch = async (id, movie_id) => {
   const reaction = await db("user_reaction").where({
     user_id: id,
     movie_id: movie_id,
@@ -38,7 +38,7 @@ const remove = async (id, movie_id) => {
 };
 
 module.exports = {
-  find,
+  fetch,
   insert,
   update,
   remove,

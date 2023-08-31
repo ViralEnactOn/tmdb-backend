@@ -2,11 +2,11 @@ const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const ratingModel = require("../models/ratingModel");
 
-const movie_rating = async (req, res) => {
+const insert = async (req, res) => {
   const { movie_id, type, rating } = req.body;
 
   try {
-    await ratingModel.movie_user_rating(req.user.id, movie_id, type, rating);
+    await ratingModel.insert(req.user.id, movie_id, type, rating);
 
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
       message: "Movie rating inserted successfully",
@@ -22,5 +22,5 @@ const movie_rating = async (req, res) => {
 };
 
 module.exports = {
-  movie_rating,
+  insert,
 };
