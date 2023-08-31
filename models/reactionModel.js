@@ -1,7 +1,6 @@
 const db = require("../config/db");
 
-
-const find_record = async (id, movie_id) => {
+const find = async (id, movie_id) => {
   const reaction = await db("user_reaction").where({
     user_id: id,
     movie_id: movie_id,
@@ -9,7 +8,7 @@ const find_record = async (id, movie_id) => {
   return reaction;
 };
 
-const insert_record = async (id, movie_id, type) => {
+const insert = async (id, movie_id, type) => {
   const reaction = await db("user_reaction").insert({
     movie_id: movie_id,
     user_id: id,
@@ -18,7 +17,7 @@ const insert_record = async (id, movie_id, type) => {
   return reaction;
 };
 
-const update_record = async (id, movie_id, type) => {
+const update = async (id, movie_id, type) => {
   const reaction = await db("user_reaction")
     .where({
       user_id: id,
@@ -28,7 +27,7 @@ const update_record = async (id, movie_id, type) => {
   return reaction;
 };
 
-const delete_record = async (id, movie_id) => {
+const remove = async (id, movie_id) => {
   const reaction = await db("user_reaction")
     .where({ user_id: id, movie_id: movie_id })
     .update({
@@ -39,8 +38,8 @@ const delete_record = async (id, movie_id) => {
 };
 
 module.exports = {
-  find_record,
-  insert_record,
-  update_record,
-  delete_record,
+  find,
+  insert,
+  update,
+  remove,
 };

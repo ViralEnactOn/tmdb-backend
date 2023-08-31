@@ -1,27 +1,20 @@
 const sendResponse = require("../config/responseUtil");
 const { ReasonPhrases, StatusCodes } = require("http-status-codes");
-const {
-  verifyUserMiddleware,
-} = require("../middleware/authenticationMiddleware");
-const { reactionSchema } = require("../schema/userReactionSchema");
 const reactionModel = require("../models/reactionModel");
 
-const insert_reaction = async (req, res) => {
+const insert = async (req, res) => {
   const { movie_id, type } = req.body;
 
   try {
-    const user_reaction = await reactionModel.find_record(
-      req.user.id,
-      movie_id
-    );
+    const user_reaction = await reactionModel.find(req.user.id, movie_id);
     if (user_reaction.length === 0) {
-      await reactionModel.insert_record(req.user.id, movie_id, type);
+      await reactionModel.insert(req.user.id, movie_id, type);
 
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
         reaction: "Reaction inserted successfully",
       });
     } else {
-      await reactionModel.update_record(req.user.id, movie_id, type);
+      await reactionModel.update(req.user.id, movie_id, type);
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
         reaction: "Reaction updated successfully",
       });
@@ -36,13 +29,10 @@ const insert_reaction = async (req, res) => {
   }
 };
 
-const delete_reaction = async (req, res) => {
+const remove = async (req, res) => {
   const { movie_id } = req.body;
   try {
-    const deletedReaction = await reactionModel.delete_record(
-      req.user.id,
-      movie_id
-    );
+    const deletedReaction = await reactionModel.remove(req.user.id, movie_id);
 
     if (deletedReaction === 1) {
       sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
@@ -63,4 +53,4 @@ const delete_reaction = async (req, res) => {
   }
 };
 
-module.exports = { insert_reaction, delete_reaction };
+module.exports = { insert, remove };

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const reactionContoller = require("../controller/reactionController");
+const reactionController = require("../controller/reactionController");
 const {
   authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
@@ -11,13 +11,13 @@ router.post(
   "/insert",
   authenticationUserMiddleware,
   authorizationMiddleware,
-  reactionContoller.insert_reaction
+  reactionController.insert
 );
 router.post(
-  "/delete",
+  "/remove",
   authenticationUserMiddleware,
   authorizationMiddleware,
-  reactionContoller.delete_reaction
+  reactionController.remove
 );
 
 module.exports = router;
