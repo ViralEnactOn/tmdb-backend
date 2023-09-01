@@ -9,32 +9,23 @@ const authorizationMiddleware = async (req, res, next) => {
   if (token) {
     decode = jwtDecode(token);
   }
-  try {
-    const user = await db("user")
-      .where({ email: decode.email })
-      .where({ isVerified: true })
-      .first();
+  const user = await db("user")
+    .where({ email: decode.email })
+    .where({ isVerified: true })
+    .first();
 
-    if (!user) {
-      return sendResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        ReasonPhrases.BAD_REQUEST,
-        {
-          message: "User not found or please verify your email!",
-        }
-      );
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    sendResponse(
+  if (!user) {
+    return sendResponse(
       res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
+      StatusCodes.BAD_REQUEST,
+      ReasonPhrases.BAD_REQUEST,
+      {
+        message: "User not found or please verify your email!",
+      }
     );
   }
+
+  req.user = user;
+  next();
 };
 module.exports = { authorizationMiddleware };

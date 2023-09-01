@@ -9,93 +9,71 @@ const path = require("path");
 const { authenticationModel } = require("../models/index");
 
 const encryptPassword = async (password) => {
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
-    return hash;
-  } catch (error) {
-    console.log("Cannot encrypt");
-    throw error;
-  }
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash(password, salt);
+  return hash;
 };
 
 // Perfect
 const register = async (req, res) => {
   const { name, email, password } = req.body;
   let hashedPassword = await encryptPassword(password);
-  try {
-    let userData = await authenticationModel.get_user(email);
-    if (userData !== undefined) {
-      return sendResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        ReasonPhrases.BAD_REQUEST,
-        {
-          message: `User with the given email already exists!`,
-        }
-      );
-    }
 
-    // Insert the user
-    await authenticationModel.insert(name, email, hashedPassword); //TODO: Remove token from here
-
-    // Get the inserted user's data
-    const responseData = await authenticationModel.get_user(email); //TODO: Rename check_user to get_user
-
-    const token = jwt.sign(
+  let userData = await authenticationModel.get_user(email);
+  if (userData !== undefined) {
+    return sendResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      ReasonPhrases.BAD_REQUEST,
       {
-        email: responseData.email,
-        name: responseData.name,
-        id: responseData.id,
-      },
-      config.jwt.secret_key,
-      {
-        expiresIn: "2h",
+        message: `User with the given email already exists!`,
       }
     );
-
-    // Send verification email
-    const message = `${config.app.base_url}/user/verify/${token}`; //TODO: Pass only token. in token store id and email
-    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-      authentication: `A verification email has been sent to ${responseData.email}`,
-    });
-    await sendEmail.sendEmail(responseData.email, "Verify Email", message);
-  } catch (error) {
-    sendResponse(
-      res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
-    );
   }
+
+  // Insert the user
+  await authenticationModel.insert(name, email, hashedPassword); //TODO: Remove token from here
+
+  // Get the inserted user's data
+  const responseData = await authenticationModel.get_user(email); //TODO: Rename check_user to get_user
+
+  const token = jwt.sign(
+    {
+      email: responseData.email,
+      name: responseData.name,
+      id: responseData.id,
+    },
+    config.jwt.secret_key,
+    {
+      expiresIn: "2h",
+    }
+  );
+
+  // Send verification email
+  const message = `${config.app.base_url}/user/verify/${token}`; //TODO: Pass only token. in token store id and email
+  sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+    authentication: `A verification email has been sent to ${responseData.email}`,
+  });
+  await sendEmail.sendEmail(responseData.email, "Verify Email", message);
 };
 
 // Perfect
 const verify = async (req, res) => {
   const { token } = req.params;
   const decode = jwtDecode(token);
-  try {
-    const user = authenticationModel.verify(decode);
+  const user = authenticationModel.verify(decode);
 
-    if (!user) {
-      return sendResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        ReasonPhrases.BAD_REQUEST,
-        `Invalid link`
-      );
-    } else {
-      return sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: "User verified successfully",
-      });
-    }
-  } catch (error) {
-    sendResponse(
+  if (!user) {
+    return sendResponse(
       res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
+      StatusCodes.BAD_REQUEST,
+      ReasonPhrases.BAD_REQUEST,
+      `Invalid link`
     );
+  } else {
+    return sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: "User verified successfully",
+    });
   }
 };
 
@@ -103,88 +81,70 @@ const verify = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    const user = await authenticationModel.login(email);
+  const user = await authenticationModel.login(email);
 
-    if (!user || user.length === 0) {
-      sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
-        message: "Invalid email!",
-      });
-      return;
+  if (!user || user.length === 0) {
+    sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
+      message: "Invalid email!",
+    });
+    return;
+  }
+
+  const passwordMatches = await bcrypt.compare(password, user.password);
+
+  if (!passwordMatches) {
+    sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
+      message: "Invalid password!",
+    });
+    return;
+  }
+
+  const token = jwt.sign(
+    {
+      email: user.email,
+      name: user.name,
+      id: user.id,
+    },
+    config.jwt.secret_key,
+    {
+      expiresIn: "2h",
     }
+  );
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
+  sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+    user: user,
+    token: token,
+  });
+};
 
-    if (!passwordMatches) {
-      sendResponse(res, StatusCodes.BAD_REQUEST, ReasonPhrases.BAD_REQUEST, {
-        message: "Invalid password!",
-      });
-      return;
-    }
-
+// Perfect
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const updateResponse = await authenticationModel.get_user(email);
+  if (!updateResponse) {
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: `This ${email} does not exist or is not verified`,
+    });
+  } else {
     const token = jwt.sign(
       {
-        email: user.email,
-        name: user.name,
-        id: user.id,
+        email: updateResponse.email,
+        name: updateResponse.name,
+        id: updateResponse.id,
       },
       config.jwt.secret_key,
       {
         expiresIn: "2h",
       }
     );
-
+    const resetPasswordUrl = `${config.app.base_url}/user/reset_password/token=${token}`;
     sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-      user: user,
-      token: token,
+      message: `A forgot password email has been sent to ${updateResponse.email}`,
     });
-  } catch (error) {
-    sendResponse(
-      res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
-    );
-  }
-};
-
-// Perfect
-const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const updateResponse = await authenticationModel.get_user(email);
-    if (!updateResponse) {
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `This ${email} does not exist or is not verified`,
-      });
-    } else {
-      const token = jwt.sign(
-        {
-          email: updateResponse.email,
-          name: updateResponse.name,
-          id: updateResponse.id,
-        },
-        config.jwt.secret_key,
-        {
-          expiresIn: "2h",
-        }
-      );
-      const resetPasswordUrl = `${config.app.base_url}/user/reset_password/token=${token}`;
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `A forgot password email has been sent to ${updateResponse.email}`,
-      });
-      await sendEmail.forgotEmail(
-        updateResponse.email,
-        "Forgot Password",
-        resetPasswordUrl
-      );
-    }
-  } catch (error) {
-    sendResponse(
-      res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
+    await sendEmail.forgotEmail(
+      updateResponse.email,
+      "Forgot Password",
+      resetPasswordUrl
     );
   }
 };
@@ -194,34 +154,25 @@ const resetPasswordTemplate = (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-  try {
-    const { token, password } = req.body;
-    const decode = jwtDecode(token);
-    const hashedPassword = await encryptPassword(password);
+  const { token, password } = req.body;
+  const decode = jwtDecode(token);
+  const hashedPassword = await encryptPassword(password);
 
-    const updateResponse = await authenticationModel.resetPassword(
-      decode.id,
-      decode.email,
-      decode.name,
-      hashedPassword
-    );
+  const updateResponse = await authenticationModel.resetPassword(
+    decode.id,
+    decode.email,
+    decode.name,
+    hashedPassword
+  );
 
-    if (updateResponse === 0) {
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `The password for ${decode.email} could not be changed.`,
-      });
-    } else {
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
-        message: `The password for ${decode.email} has been successfully changed.`,
-      });
-    }
-  } catch (error) {
-    sendResponse(
-      res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
-    );
+  if (updateResponse === 0) {
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: `The password for ${decode.email} could not be changed.`,
+    });
+  } else {
+    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      message: `The password for ${decode.email} has been successfully changed.`,
+    });
   }
 };
 

@@ -10,30 +10,21 @@ const authenticationUserMiddleware = async (req, res, next) => {
     decode = jwtDecode(token);
   }
 
-  try {
-    const user = await db("user").where({ email: decode.email }).first();
+  const user = await db("user").where({ email: decode.email }).first();
 
-    if (!user) {
-      return sendResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        ReasonPhrases.BAD_REQUEST,
-        {
-          message: "User not found!",
-        }
-      );
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    sendResponse(
+  if (!user) {
+    return sendResponse(
       res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      ReasonPhrases.INTERNAL_SERVER_ERROR,
-      error.message
+      StatusCodes.BAD_REQUEST,
+      ReasonPhrases.BAD_REQUEST,
+      {
+        message: "User not found!",
+      }
     );
   }
+
+  req.user = user;
+  next();
 };
 
 module.exports = { authenticationUserMiddleware };
