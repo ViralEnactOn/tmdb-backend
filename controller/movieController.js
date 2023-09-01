@@ -1,9 +1,10 @@
 const sendResponse = require("../config/responseUtil");
+const { StatusCodes } = require("http-status-codes");
 const { movieModel } = require("../models/index");
 const getAll = async (req, res) => {
   const response = await movieModel.getAll();
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     movies: response,
   });
 };
@@ -13,7 +14,7 @@ const pagination = async (req, res) => {
   const limit = 20;
   const response = await movieModel.pagination(page, limit);
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     movies: response,
   });
 };

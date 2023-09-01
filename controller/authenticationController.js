@@ -4,6 +4,8 @@ const config = require("../config/config");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../config/sendMail");
 const sendResponse = require("../config/responseUtil");
+const { StatusCodes } = require("http-status-codes");
+
 const path = require("path");
 const { authenticationModel } = require("../models/index");
 
@@ -20,7 +22,7 @@ const register = async (req, res) => {
 
   let userData = await authenticationModel.get_user(email);
   if (userData !== undefined) {
-    return sendResponse(res, {
+    return sendResponse(res, StatusCodes.BAD_REQUEST, {
       message: `User with the given email already exists!`,
     });
   }
@@ -45,7 +47,7 @@ const register = async (req, res) => {
 
   // Send verification email
   const message = `${config.app.base_url}/user/verify/${token}`; //TODO: Pass only token. in token store id and email
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     authentication: `A verification email has been sent to ${responseData.email}`,
   });
   await sendEmail.sendEmail(responseData.email, "Verify Email", message);
@@ -58,9 +60,9 @@ const verify = async (req, res) => {
   const user = authenticationModel.verify(decode);
 
   if (!user) {
-    return sendResponse(res, `Invalid link`);
+    return sendResponse(res, StatusCodes.BAD_REQUEST, `Invalid link`);
   } else {
-    return sendResponse(res, {
+    return sendResponse(res, StatusCodes.OK, {
       message: "User verified successfully",
     });
   }
@@ -73,7 +75,7 @@ const login = async (req, res) => {
   const user = await authenticationModel.login(email);
 
   if (!user || user.length === 0) {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.BAD_REQUEST, {
       message: "Invalid email!",
     });
     return;
@@ -82,7 +84,7 @@ const login = async (req, res) => {
   const passwordMatches = await bcrypt.compare(password, user.password);
 
   if (!passwordMatches) {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.BAD_REQUEST, {
       message: "Invalid password!",
     });
     return;
@@ -100,7 +102,7 @@ const login = async (req, res) => {
     }
   );
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     user: user,
     token: token,
   });
@@ -111,7 +113,7 @@ const forgotPassword = async (req, res) => {
   const { email } = req.body;
   const updateResponse = await authenticationModel.get_user(email);
   if (!updateResponse) {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.OK, {
       message: `This ${email} does not exist or is not verified`,
     });
   } else {
@@ -127,7 +129,7 @@ const forgotPassword = async (req, res) => {
       }
     );
     const resetPasswordUrl = `${config.app.base_url}/user/reset_password/token=${token}`;
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.OK, {
       message: `A forgot password email has been sent to ${updateResponse.email}`,
     });
     await sendEmail.forgotEmail(
@@ -155,11 +157,11 @@ const resetPassword = async (req, res) => {
   );
 
   if (updateResponse === 0) {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.OK, {
       message: `The password for ${decode.email} could not be changed.`,
     });
   } else {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.OK, {
       message: `The password for ${decode.email} has been successfully changed.`,
     });
   }

@@ -1,11 +1,12 @@
 const sendResponse = require("../config/responseUtil");
+const { StatusCodes } = require("http-status-codes");
 const { watchListModel, movieModel } = require("../models/index");
 
 const insert = async (req, res) => {
   const { name, isPublic } = req.body;
   await watchListModel.insert(req.user.id, name, isPublic);
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     message: "New watch list operation successful",
   });
 };
@@ -21,11 +22,11 @@ const update = async (req, res) => {
   );
 
   if (updatedWatchList === 1) {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.OK, {
       message: "Watch list operation successful",
     });
   } else {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Watch list entry not found",
     });
   }
@@ -37,11 +38,11 @@ const remove = async (req, res) => {
   const deletedWatchList = await watchListModel.remove(id, req.user.id);
 
   if (deletedWatchList === 1) {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.OK, {
       message: "Watch list delete operation successful",
     });
   } else {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Watch list entry not found",
     });
   }
@@ -50,7 +51,7 @@ const remove = async (req, res) => {
 const fetch = async (req, res) => {
   const watchListData = await watchListModel.fetch(req.user.id);
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     watch_list: watchListData,
   });
 };
@@ -66,12 +67,12 @@ const insertMovie = async (req, res) => {
   );
 
   if (updateResult === 0) {
-    return sendResponse(res, {
+    return sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Watch list entry not found",
     });
   }
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     message: "Movie inserted successfully",
   });
 };
@@ -85,12 +86,12 @@ const removeMovie = async (req, res) => {
   );
 
   if (updateResult === 0) {
-    return sendResponse(res, {
+    return sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Watch list entry not found",
     });
   }
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     message: "Movie deleted successfully",
   });
 };
@@ -113,17 +114,17 @@ const fetchMovie = async (req, res) => {
     const movieDetails = await movieModel.getDetails(movieIds);
 
     if (movieDetails.length > 0) {
-      sendResponse(res, {
+      sendResponse(res, StatusCodes.OK, {
         watchlist: watch_list,
         movieDetails: movieDetails,
       });
     } else {
-      sendResponse(res, {
+      sendResponse(res, StatusCodes.OK, {
         message: "No movie details found for the given movie IDs.",
       });
     }
   } else {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Watch list not found or movies array is missing.",
     });
   }

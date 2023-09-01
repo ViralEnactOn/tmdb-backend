@@ -1,4 +1,5 @@
 const sendResponse = require("../config/responseUtil");
+const { StatusCodes } = require("http-status-codes");
 const { favoriteModel } = require("../models/index");
 const { movieModel } = require("../models/index");
 
@@ -7,11 +8,11 @@ const insert = async (req, res) => {
   const user = req.user;
   const insertResult = await favoriteModel.insert_record(user, type, items);
   if (insertResult === 0) {
-    return sendResponse(res, {
+    return sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Favorite list entry not found",
     });
   }
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     message: "Favorite list inserted successfully",
   });
 };
@@ -30,17 +31,17 @@ const fetch = async (req, res) => {
     const movieDetails = await movieModel.getDetails(movieIds);
 
     if (movieDetails.length > 0) {
-      sendResponse(res, {
+      sendResponse(res, StatusCodes.OK, {
         // favorite_list: watch_list,
         movieDetails: movieDetails,
       });
     } else {
-      sendResponse(res, {
+      sendResponse(res, StatusCodes.OK, {
         message: "No movie details found for the given movie IDs.",
       });
     }
   } else {
-    sendResponse(res, {
+    sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Watch list not found or items array is missing.",
     });
   }
@@ -55,12 +56,12 @@ const remove = async (req, res) => {
   );
 
   if (updateResult === 0) {
-    return sendResponse(res, {
+    return sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Watch list entry not found",
     });
   }
 
-  sendResponse(res, {
+  sendResponse(res, StatusCodes.OK, {
     message: "Movie deleted successfully",
   });
 };
