@@ -38,12 +38,63 @@ const movieRevenueCountryWise = async (country) => {
   return movie;
 };
 
-const movieGenresRating = async (genres_id) => {
-  const movie = await db("movie")
-    .select("*")
-    .whereRaw("genre_ids LIKE ?", `%${genres_id}%`)
-    .orderBy("vote_average", "desc");
+const movieGenresRating = async (user_id, watch_list_id) => {
+  const movie = await db("user_watch_list")
+    .where({
+      id: watch_list_id,
+      user_id: user_id,
+      isDeleted: false,
+    })
+    .first();
   return movie;
+};
+
+const genreCounts = async (movieIds) => {
+  // const getGenreNameById = async (genreId) => {
+  //   console.log(genreId);
+  //   const genre = await db("movie_genre_list")
+  //     .where({
+  //       id: genreId,
+  //     })
+  //     .first();
+  //   console.log(genre.name);
+  //   return genre ? genre.name : "";
+  // };
+
+  const genreCounts = await db("movie")
+    .select(
+      db.raw("JSON_UNQUOTE(JSON_EXTRACT(genre_ids, '$[*]')) AS genre_ids")
+    )
+    .whereIn("id", movieIds)
+    .pluck("genre_ids");
+
+  return genreCounts;
+
+  // const flattenedGenreIds = genreCounts
+  //   .map((genreIds) => JSON.parse(genreIds))
+  //   .flat();
+  // console.log(flattenedGenreIds);
+
+  // const genreCountMap = flattenedGenreIds.reduce((acc, genreId) => {
+  //   acc[genreId] = (acc[genreId] || 0) + 1;
+  //   return acc;
+  // }, {});
+
+  // const genreCountArray = Object.keys(genreCountMap).map((genreId) => ({
+  //   genre_id: parseInt(genreId),
+  //   genre_name: getGenreNameById(genreId),
+  //   genre_count: genreCountMap[genreId],
+  // }));
+  // return genreCountArray;
+};
+
+const getGenreName = async (genreIds) => {
+  const movie = await db("movie_genre_list")
+    .where({
+      id: genreIds,
+    })
+    .first();
+  return movie ? movie.name : "";
 };
 
 module.exports = {
@@ -51,4 +102,6 @@ module.exports = {
   movieRevenue,
   movieRevenueCountryWise,
   movieGenresRating,
+  genreCounts,
+  getGenreName,
 };

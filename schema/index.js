@@ -5,6 +5,7 @@ const { userSchema } = require("./userSchema");
 const { userWatchListSchema } = require("./userWatchListSchema");
 const { userReactionSchema } = require("./userReactionSchema");
 const { userRatingSchema } = require("./userRatingSchema");
+const { genreSchema } = require("./genreSchema");
 
 module.exports = {
   userCommentSchema,
@@ -14,4 +15,5 @@ module.exports = {
   userWatchListSchema,
   userReactionSchema,
   userRatingSchema,
+  genreSchema,
 };

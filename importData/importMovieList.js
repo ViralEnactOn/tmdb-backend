@@ -1,9 +1,8 @@
 const config = require("../config/config");
 const db = require("../config/db");
-const { movieSchema } = require("../schema/movieSchema");
 
 const fetchData = async (page) => {
-  const endPoint = `${config.tmdb_service.api_url}discover/movie?page=${page}`;
+  const endPoint = `${config.tmdb_service.api_url}discover/movie/?page=${page}&language=en-US`;
   const response = await fetch(endPoint, config.tmdb_service.options);
   const data = await response.json();
   return data.results;

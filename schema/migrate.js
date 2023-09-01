@@ -6,6 +6,7 @@ const {
   userWatchListSchema,
   userReactionSchema,
   userRatingSchema,
+  genreSchema,
 } = require("../schema/index");
 
 const migrate = async () => {
@@ -16,6 +17,7 @@ const migrate = async () => {
   const userComment = await userCommentSchema;
   const userReaction = await userReactionSchema;
   const userRating = await userRatingSchema;
+  const genreList = await genreSchema;
   console.log("Table Created Successfully");
 };
 migrate();
