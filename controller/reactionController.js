@@ -1,5 +1,4 @@
 const sendResponse = require("../config/responseUtil");
-const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { reactionModal } = require("../models/index");
 
 const insert = async (req, res) => {
@@ -9,12 +8,12 @@ const insert = async (req, res) => {
   if (user_reaction.length === 0) {
     await reactionModal.insert(req.user.id, movie_id, type);
 
-    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+    sendResponse(res, {
       reaction: "Reaction inserted successfully",
     });
   } else {
     await reactionModal.update(req.user.id, movie_id, type);
-    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+    sendResponse(res, {
       reaction: "Reaction updated successfully",
     });
   }
@@ -26,11 +25,11 @@ const remove = async (req, res) => {
   const deletedReaction = await reactionModal.remove(req.user.id, movie_id);
 
   if (deletedReaction === 1) {
-    sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+    sendResponse(res, {
       message: "Reaction delete operation successful",
     });
   } else {
-    sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+    sendResponse(res, {
       message: "Reaction entry not found",
     });
   }

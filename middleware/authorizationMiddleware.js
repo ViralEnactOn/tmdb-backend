@@ -1,6 +1,5 @@
 const db = require("../config/db");
 const sendResponse = require("../config/responseUtil");
-const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
 
 const authorizationMiddleware = async (req, res, next) => {
@@ -15,14 +14,9 @@ const authorizationMiddleware = async (req, res, next) => {
     .first();
 
   if (!user) {
-    return sendResponse(
-      res,
-      StatusCodes.BAD_REQUEST,
-      ReasonPhrases.BAD_REQUEST,
-      {
-        message: "User not found or please verify your email!",
-      }
-    );
+    return sendResponse(res, {
+      message: "User not found or please verify your email!",
+    });
   }
 
   req.user = user;

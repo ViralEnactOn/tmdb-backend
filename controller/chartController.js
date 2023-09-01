@@ -1,5 +1,4 @@
 const sendResponse = require("../config/responseUtil");
-const { ReasonPhrases, StatusCodes } = require("http-status-codes");
 const { chartModel, movieModel } = require("../models/index");
 const { getGenreName } = require("../models/chartModel");
 
@@ -16,14 +15,14 @@ const movieDetailChart = async (req, res) => {
     threeYearsAgo
   );
 
-  sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+  sendResponse(res, {
     movie: releaseCounts,
   });
 };
 
 const movieRevenue = async (req, res) => {
   const revenue = await chartModel.movieRevenue();
-  sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+  sendResponse(res, {
     revenue: revenue,
   });
 };
@@ -31,7 +30,7 @@ const movieRevenue = async (req, res) => {
 const movieRevenueCountryWise = async (req, res) => {
   const { country } = req.body;
   const revenue = await chartModel.movieRevenueCountryWise(country);
-  sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+  sendResponse(res, {
     county_revenue: revenue,
   });
 };
@@ -78,16 +77,16 @@ const movieGenresRating = async (req, res) => {
     const genreCountArray = await Promise.all(genreNamePromises);
 
     if (genreCountArray.length > 0) {
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      sendResponse(res, {
         genreCountArray,
       });
     } else {
-      sendResponse(res, StatusCodes.OK, ReasonPhrases.OK, {
+      sendResponse(res, {
         message: "No movie details found for the given movie IDs.",
       });
     }
   } else {
-    sendResponse(res, StatusCodes.NOT_FOUND, ReasonPhrases.NOT_FOUND, {
+    sendResponse(res, {
       message: "Watch list not found or movies array is missing.",
     });
   }

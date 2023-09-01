@@ -1,10 +1,5 @@
-
 function sendResponse(res, statusCode, message, data = null) {
-  res.status(statusCode).json({
-    status: statusCode,
-    message: message,
-    data: data,
-  });
+  res.status(statusCode).send(data);
 }
 
 module.exports = sendResponse;
