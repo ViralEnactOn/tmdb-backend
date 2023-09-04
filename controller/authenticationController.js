@@ -46,7 +46,7 @@ const register = async (req, res) => {
   );
 
   // Send verification email
-  const message = `${config.app.base_url}/user/verify/${token}`; //TODO: Pass only token. in token store id and email
+  const message = `${config.app.front_end_url}/verify/${token}`; //TODO: Pass only token. in token store id and email
   sendResponse(res, StatusCodes.OK, {
     authentication: `A verification email has been sent to ${responseData.email}`,
   });
@@ -128,7 +128,7 @@ const forgotPassword = async (req, res) => {
         expiresIn: "2h",
       }
     );
-    const resetPasswordUrl = `${config.app.base_url}/user/reset_password/token=${token}`;
+    const resetPasswordUrl = `${config.app.front_end_url}/reset/${token}`;
     sendResponse(res, StatusCodes.OK, {
       message: `A forgot password email has been sent to ${updateResponse.email}`,
     });

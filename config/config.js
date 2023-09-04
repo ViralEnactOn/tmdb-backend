@@ -11,6 +11,7 @@ const options = {
 module.exports = {
   app: {
     base_url: process.env.BASE_URL,
+    front_end_url: process.env.FRONT_END_URL,
   },
   db: {
     host: process.env.DB_HOST,
