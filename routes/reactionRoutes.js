@@ -5,18 +5,18 @@ const {
   authenticationUserMiddleware,
 } = require("../middleware/authenticationMiddleware");
 const {
-  authorizationMiddleware,
-} = require("../middleware/authorizationMiddleware");
+  userVerifiedMiddleware,
+} = require("../middleware/userVerifiedMiddleware");
 router.post(
   "/insert",
   authenticationUserMiddleware,
-  authorizationMiddleware,
+  userVerifiedMiddleware,
   reactionController.insert
 );
 router.post(
   "/remove",
   authenticationUserMiddleware,
-  authorizationMiddleware,
+  userVerifiedMiddleware,
   reactionController.remove
 );
 

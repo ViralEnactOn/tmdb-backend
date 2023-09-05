@@ -1,7 +1,7 @@
 const { authenticationUserMiddleware } = require("./authenticationMiddleware");
-const { authorizationMiddleware } = require("./authorizationMiddleware");
+const { userVerifiedMiddleware } = require("./userVerifiedMiddleware");
 
 module.exports = {
   authenticationUserMiddleware,
-  authorizationMiddleware,
+  userVerifiedMiddleware,
 };

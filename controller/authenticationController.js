@@ -108,6 +108,12 @@ const login = async (req, res) => {
   });
 };
 
+const view = async (req, res) => {
+  sendResponse(res, StatusCodes.OK, {
+    user: req.user,
+  });
+};
+
 // Perfect
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -174,4 +180,5 @@ module.exports = {
   forgotPassword,
   resetPasswordTemplate,
   resetPassword,
+  view,
 };

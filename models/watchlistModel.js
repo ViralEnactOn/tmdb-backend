@@ -35,6 +35,7 @@ const fetch = async (id) => {
     .select(
       "user_watch_list.id as user_watch_list_id",
       "user_watch_list.name as user_watch_list_name",
+      "user_watch_list.isPublic as user_watch_list_is_public",
       "user.id as user_id",
       "user.name as user_name",
       "user.email as user_email"

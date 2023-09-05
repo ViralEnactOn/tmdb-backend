@@ -3,18 +3,19 @@ const sendResponse = require("../config/responseUtil");
 const { StatusCodes } = require("http-status-codes");
 const { default: jwtDecode } = require("jwt-decode");
 
-const authorizationMiddleware = async (req, res, next) => {
+const userVerifiedMiddleware = async (req, res, next) => {
+  //name change to verification
   const { token } = req.body;
   let decode;
   if (token) {
     decode = jwtDecode(token);
   }
-  const user = await db("user")
-    .where({ email: decode.email })
-    .where({ isVerified: true })
-    .first();
+  // const user = await db("user")
+  //   .where({ email: decode.email })
+  //   .where({ isVerified: true })
+  //   .first();
 
-  if (!user) {
+  if (!req.user.isVerified) {
     return sendResponse(res, StatusCodes.BAD_REQUEST, {
       message: "User not found or please verify your email!",
     });
@@ -23,4 +24,4 @@ const authorizationMiddleware = async (req, res, next) => {
   req.user = user;
   next();
 };
-module.exports = { authorizationMiddleware };
+module.exports = { userVerifiedMiddleware };
