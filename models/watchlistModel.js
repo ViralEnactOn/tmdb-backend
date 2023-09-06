@@ -1,20 +1,18 @@
 const db = require("../config/db");
 
-const insert = async (id, name, isPublic) => {
+const insert = async (id, name) => {
   const watch_list = await db("user_watch_list").insert({
     name: name,
     user_id: id,
-    isPublic: isPublic,
   });
   return watch_list;
 };
 
-const update = async (id, user_id, name, isPublic) => {
+const update = async (id, user_id, name) => {
   const watch_list = await db("user_watch_list")
     .where({ user_id: user_id, id: id })
     .update({
       name: name,
-      isPublic: isPublic,
       updated_at: db.fn.now(),
     });
   return watch_list;
@@ -35,7 +33,6 @@ const fetch = async (id) => {
     .select(
       "user_watch_list.id as user_watch_list_id",
       "user_watch_list.name as user_watch_list_name",
-      "user_watch_list.isPublic as user_watch_list_is_public",
       "user.id as user_id",
       "user.name as user_name",
       "user.email as user_email"
@@ -43,6 +40,17 @@ const fetch = async (id) => {
     .where({ user_id: id, isDeleted: false })
     .from("user_watch_list")
     .join("user", "user_watch_list.user_id", "user.id");
+  return watch_list;
+};
+
+const get = async (id, user_id) => {
+  const watch_list = await db("user_watch_list")
+    .where({
+      id: id,
+      user_id: user_id,
+      isDeleted: false,
+    })
+    .first();
   return watch_list;
 };
 
@@ -75,13 +83,12 @@ const removeMovie = async (id, user_id, movie_id) => {
   return watch_list;
 };
 
-const fetchMovie = async (user_id, watch_list_id, isPublic) => {
+const fetchMovie = async (user_id, watch_list_id) => {
   const watch_list = await db("user_watch_list")
     .where({
       id: watch_list_id,
       user_id: user_id,
       isDeleted: false,
-      isPublic: isPublic === "false" || false ? 0 : 1,
     })
     .first();
   return watch_list;
@@ -92,6 +99,7 @@ module.exports = {
   update,
   remove,
   fetch,
+  get,
   insertMovie,
   removeMovie,
   fetchMovie,

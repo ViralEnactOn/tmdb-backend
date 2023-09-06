@@ -35,7 +35,7 @@ router.post(
   watchListController.removeMovie
 );
 router.get(
-  "/fetchmovie/watch_list_id=:watch_list_id/isPublic=:isPublic/user_id=:user_id",
+  "/fetchmovie/watch_list_id=:watch_list_id/user_id=:user_id",
   watchListController.fetchMovie
 );
 

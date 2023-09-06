@@ -6,17 +6,21 @@ const insert = async (user, type, items) => {
     .first();
 
   if (existingRecord) {
-    const updatedFavorite = await db("user_favorite_list")
-      .where({ user_id: user.id })
-      .update({
-        type: type,
-        items: db.raw(
-          `JSON_ARRAY_APPEND(COALESCE(items, JSON_ARRAY()), '$', ?)`,
-          [items]
-        ),
-        updated_at: db.fn.now(),
-      });
-    return updatedFavorite;
+    if (!existingRecord.items || !existingRecord.items.includes(items)) {
+      const updatedFavorite = await db("user_favorite_list")
+        .where({ user_id: user.id })
+        .update({
+          type: type,
+          items: db.raw(
+            `JSON_ARRAY_APPEND(COALESCE(items, JSON_ARRAY()), '$', ?)`,
+            [items]
+          ),
+          updated_at: db.fn.now(),
+        });
+      return updatedFavorite;
+    } else {
+      return "Movie already there in the favorites";
+    }
   } else {
     const newFavorite = await db("user_favorite_list").insert({
       user_id: user.id,

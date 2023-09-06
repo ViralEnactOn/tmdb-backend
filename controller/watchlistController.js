@@ -3,8 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const { watchListModel, movieModel } = require("../models/index");
 
 const insert = async (req, res) => {
-  const { name, isPublic } = req.body;
-  await watchListModel.insert(req.user.id, name, isPublic);
+  const { name } = req.body;
+  await watchListModel.insert(req.user.id, name);
 
   sendResponse(res, StatusCodes.OK, {
     message: "New watch list operation successful",
@@ -12,14 +12,9 @@ const insert = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const { id, name, isPublic } = req.body;
+  const { id, name } = req.body;
 
-  const updatedWatchList = await watchListModel.update(
-    id,
-    req.user.id,
-    name,
-    isPublic
-  );
+  const updatedWatchList = await watchListModel.update(id, req.user.id, name);
 
   if (updatedWatchList === 1) {
     sendResponse(res, StatusCodes.OK, {
@@ -60,21 +55,30 @@ const fetch = async (req, res) => {
 const insertMovie = async (req, res) => {
   const { movie_id, id } = req.body;
 
-  const updateResult = await watchListModel.insertMovie(
-    id,
-    req.user.id,
-    movie_id
-  );
+  const getWatchList = await watchListModel.get(id, req.user.id);
+  if (getWatchList) {
+    if (!getWatchList.movies || !getWatchList.movies.includes(movie_id)) {
+      const updateResult = await watchListModel.insertMovie(
+        id,
+        req.user.id,
+        movie_id
+      );
 
-  if (updateResult === 0) {
-    return sendResponse(res, StatusCodes.NOT_FOUND, {
-      message: "Watch list entry not found",
-    });
+      if (updateResult === 0) {
+        return sendResponse(res, StatusCodes.NOT_FOUND, {
+          message: "Watch list entry not found",
+        });
+      }
+
+      sendResponse(res, StatusCodes.OK, {
+        message: "Movie inserted successfully",
+      });
+    } else {
+      return sendResponse(res, StatusCodes.OK, {
+        message: "Movie already there in the list",
+      });
+    }
   }
-
-  sendResponse(res, StatusCodes.OK, {
-    message: "Movie inserted successfully",
-  });
 };
 
 const removeMovie = async (req, res) => {
@@ -97,14 +101,10 @@ const removeMovie = async (req, res) => {
 };
 
 const fetchMovie = async (req, res) => {
-  const { watch_list_id, isPublic, user_id } = req.params;
+  const { watch_list_id, user_id } = req.params;
   let watch_list = [];
 
-  const watchList = await watchListModel.fetchMovie(
-    user_id,
-    watch_list_id,
-    isPublic
-  );
+  const watchList = await watchListModel.fetchMovie(user_id, watch_list_id);
 
   if (watchList && watchList.movies) {
     watch_list.push(watchList);

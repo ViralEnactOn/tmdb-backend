@@ -6,15 +6,20 @@ const { movieModel } = require("../models/index");
 const insert = async (req, res) => {
   const { type, items } = req.body;
   const user = req.user;
-  const insertResult = await favoriteModel.insert_record(user, type, items);
+  const insertResult = await favoriteModel.insert(user, type, items);
   if (insertResult === 0) {
     return sendResponse(res, StatusCodes.NOT_FOUND, {
       message: "Favorite list entry not found",
     });
+  } else if (insertResult === "Movie already there in the favorites") {
+    return sendResponse(res, StatusCodes.OK, {
+      message: "Movie already there in the favorites",
+    });
+  } else {
+    sendResponse(res, StatusCodes.OK, {
+      message: "Favorite list inserted successfully",
+    });
   }
-  sendResponse(res, StatusCodes.OK, {
-    message: "Favorite list inserted successfully",
-  });
 };
 
 const fetch = async (req, res) => {
