@@ -15,4 +15,7 @@ router.post(
   ratingController.insert
 );
 
+router.post("/fetch", authenticationUserMiddleware, ratingController.fetch);
+
+
 module.exports = router;

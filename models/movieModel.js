@@ -5,6 +5,11 @@ const getAll = async () => {
   return movie;
 };
 
+const detail = async (id) => {
+  const movie = await db.from("movie").where({ id: id });
+  return movie;
+};
+
 const pagination = async (
   page,
   limit,
@@ -68,4 +73,5 @@ module.exports = {
   getAll,
   pagination,
   getDetails,
+  detail,
 };

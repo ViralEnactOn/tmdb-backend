@@ -21,7 +21,7 @@ const userVerifiedMiddleware = async (req, res, next) => {
     });
   }
 
-  req.user = user;
+  req.user = req.user;
   next();
 };
 module.exports = { userVerifiedMiddleware };

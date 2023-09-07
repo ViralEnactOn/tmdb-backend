@@ -12,6 +12,17 @@ const insert = async (req, res) => {
   });
 };
 
+const fetch = async (req, res) => {
+  const { movie_id } = req.body;
+
+  const userRating = await ratingModel.fetch(movie_id);
+
+  sendResponse(res, StatusCodes.OK, {
+    rating: userRating,
+  });
+};
+
 module.exports = {
   insert,
+  fetch,
 };

@@ -9,6 +9,15 @@ const getAll = async (req, res) => {
   });
 };
 
+const detail = async (req, res) => {
+  const { id } = req.query;
+  const response = await movieModel.detail(id);
+
+  sendResponse(res, StatusCodes.OK, {
+    movies: response,
+  });
+};
+
 const pagination = async (req, res) => {
   const {
     page,
@@ -48,4 +57,5 @@ const pagination = async (req, res) => {
 module.exports = {
   getAll,
   pagination,
+  detail,
 };

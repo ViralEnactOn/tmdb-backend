@@ -8,6 +8,12 @@ const {
   userVerifiedMiddleware,
 } = require("../middleware/userVerifiedMiddleware");
 router.post(
+  "/fetch",
+  authenticationUserMiddleware,
+  userVerifiedMiddleware,
+  reactionController.fetch
+);
+router.post(
   "/insert",
   authenticationUserMiddleware,
   userVerifiedMiddleware,

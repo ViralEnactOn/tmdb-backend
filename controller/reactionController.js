@@ -2,6 +2,20 @@ const sendResponse = require("../config/responseUtil");
 const { StatusCodes } = require("http-status-codes");
 const { reactionModal } = require("../models/index");
 
+const fetch = async (req, res) => {
+  const { movie_id } = req.body;
+  const user_reaction = await reactionModal.fetch(req.user.id, movie_id);
+  if (user_reaction.length === 0) {
+    return sendResponse(res, StatusCodes.OK, {
+      message: "Reaction Record Not Found",
+    });
+  } else {
+    return sendResponse(res, StatusCodes.OK, {
+      reaction: user_reaction,
+    });
+  }
+};
+
 const insert = async (req, res) => {
   const { movie_id, type } = req.body;
 
@@ -36,4 +50,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { insert, remove };
+module.exports = { insert, remove, fetch };

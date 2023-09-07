@@ -13,6 +13,7 @@ const insert = async (id, movie_id, type) => {
     movie_id: movie_id,
     user_id: id,
     reaction: type,
+    isDeleted: false,
   });
   return reaction;
 };
@@ -30,10 +31,7 @@ const update = async (id, movie_id, type) => {
 const remove = async (id, movie_id) => {
   const reaction = await db("user_reaction")
     .where({ user_id: id, movie_id: movie_id })
-    .update({
-      isDeleted: true,
-      updated_at: db.fn.now(),
-    });
+    .del();
   return reaction;
 };
 
