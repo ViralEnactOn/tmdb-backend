@@ -15,4 +15,6 @@ router.post(
   commentController.insert
 );
 
+router.post("/fetch", authenticationUserMiddleware, commentController.fetch);
+
 module.exports = router;

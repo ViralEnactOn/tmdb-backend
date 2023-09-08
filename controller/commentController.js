@@ -14,6 +14,17 @@ const insert = async (req, res) => {
   });
 };
 
+const fetch = async (req, res) => {
+  const { movie_id } = req.body;
+
+  const userComment = await commentModel.fetch(movie_id);
+
+  sendResponse(res, StatusCodes.OK, {
+    comment: userComment,
+  });
+};
+
 module.exports = {
   insert,
+  fetch,
 };
