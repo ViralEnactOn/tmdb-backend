@@ -11,7 +11,7 @@ const detail = async (id) => {
 };
 
 const pagination = async (
-  page,
+  cursor,
   limit,
   newSortBy,
   release_date_gte,
@@ -24,46 +24,58 @@ const pagination = async (
   vote_count_lte,
   genre_ids
 ) => {
-  const movie = await db
-    .from("movie")
-    .where((builder) => {
-      if (release_date_gte) {
-        builder.where("release_date", ">=", release_date_gte);
-      }
-      if (release_date_lte) {
-        builder.where("release_date", "<=", release_date_lte);
-      }
-      if (vote_average_gte) {
-        builder.where("vote_average", ">=", vote_average_gte);
-      }
-      if (vote_average_lte) {
-        builder.where("vote_average", "<=", vote_average_lte);
-      }
-      if (runtime_gte) {
-        builder.where("runtime", ">=", runtime_gte);
-      }
-      if (runtime_lte) {
-        builder.where("runtime", "<=", runtime_lte);
-      }
-      if (vote_count_gte) {
-        builder.where("vote_count", ">=", vote_count_gte);
-      }
-      if (vote_count_lte) {
-        builder.where("vote_count", "<=", vote_count_lte);
-      }
-      if (genre_ids) {
-        const genreIdArray = genre_ids.split(",").map(Number);
-        builder.whereRaw("JSON_CONTAINS(genre_ids, ?)", [
-          JSON.stringify(genreIdArray),
-        ]);
-      }
-    })
-    .orderBy(newSortBy[0], newSortBy[1])
-    .offset(page === "1" ? 0 : (page - 1) * limit)
-    .limit(limit);
+  let query = db.from("movie");
 
-  return movie;
+  if (cursor) {
+    query = query
+      .where((builder) => {
+        // Assuming your cursor is based on a unique column like "id"
+        builder.where("id", ">", cursor);
+      })
+      .orderBy(newSortBy[0], newSortBy[1]);
+  } else {
+    // If no cursor is provided, simply apply the sorting
+    query = query.orderBy(newSortBy[0], newSortBy[1]);
+  }
+
+  if (release_date_gte) {
+    query = query.where("release_date", ">=", release_date_gte);
+  }
+  if (release_date_lte) {
+    query = query.where("release_date", "<=", release_date_lte);
+  }
+  if (vote_average_gte) {
+    query = query.where("vote_average", ">=", vote_average_gte);
+  }
+  if (vote_average_lte) {
+    query = query.where("vote_average", "<=", vote_average_lte);
+  }
+  if (runtime_gte) {
+    query = query.where("runtime", ">=", runtime_gte);
+  }
+  if (runtime_lte) {
+    query = query.where("runtime", "<=", runtime_lte);
+  }
+  if (vote_count_gte) {
+    query = query.where("vote_count", ">=", vote_count_gte);
+  }
+  if (vote_count_lte) {
+    query = query.where("vote_count", "<=", vote_count_lte);
+  }
+  if (genre_ids) {
+    const genreIdArray = genre_ids.split(",").map(Number);
+    query = query.whereRaw("JSON_CONTAINS(genre_ids, ?)", [
+      JSON.stringify(genreIdArray),
+    ]);
+  }
+
+  query = query.limit(limit);
+
+  const results = await query;
+
+  return results;
 };
+
 const getDetails = async (movieIds) => {
   const movie = await db("movie").whereIn("id", movieIds);
   return movie;

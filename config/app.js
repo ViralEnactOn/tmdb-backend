@@ -25,16 +25,12 @@ app.use((err, req, res, next) => {
   return sendResponse(res, err.message || "Something went wrong on the server");
 });
 
-const asyncMiddleware = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-app.use("/movie", asyncMiddleware(movieRoutes));
+app.use("/movie", movieRoutes);
 app.use("/user", authenticationRoutes);
 app.use("/watchlist", watchlistRoutes);
 app.use("/favorite", favoriteRoutes);
 app.use("/reaction", reactionRoutes);
-app.use("/chart", asyncMiddleware(chartRoutes));
+app.use("/chart", chartRoutes);
 app.use("/rating", ratingRoutes);
 app.use("/comment", commentRoutes);
 
