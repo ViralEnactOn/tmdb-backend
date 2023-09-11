@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const movieDetailChart = async (genres_id, threeYearsAgo) => {
+const movieDetailChart = async (genres_id, threeYearsAgo, currentDate) => {
   const movie = await db("movie")
     .select(
       db.raw(
@@ -12,7 +12,10 @@ const movieDetailChart = async (genres_id, threeYearsAgo) => {
     //   db.raw('JSON_UNQUOTE(JSON_EXTRACT(genre_ids, "$[*]"))'),
     //   genres_id
     // )
-    .where("release_date", ">=", threeYearsAgo)
+    .where((builder) => {
+      builder.where("release_date", ">=", threeYearsAgo);
+      builder.where("release_date", "<=", currentDate);
+    })
     .groupBy(db.raw("YEAR(release_date), WEEK(release_date)"))
     .orderBy(db.raw("YEAR(release_date), WEEK(release_date)"));
   return movie;
@@ -30,12 +33,23 @@ const movieRevenue = async () => {
   return movie;
 };
 
-const movieRevenueCountryWise = async (country) => {
-  const movie = await db("movie")
-    .sum("revenue as total_revenue")
-    .whereRaw(`JSON_CONTAINS(production_countries, ?)`, [`["${country}"]`]);
+const movieRevenueCountryWise = async (countries) => {
+  const revenueByCountries = [];
 
-  return movie;
+  for (const country of countries) {
+    const revenue = await db("movie")
+      .sum("revenue as total_revenue")
+      .whereRaw("JSON_CONTAINS(production_countries, ?)", [`["${country}"]`]);
+
+    const countryRevenue = {
+      country: country,
+      revenue: revenue[0].total_revenue || 0,
+    };
+
+    revenueByCountries.push(countryRevenue);
+  }
+
+  return revenueByCountries;
 };
 
 const movieGenresRating = async (user_id, watch_list_id) => {

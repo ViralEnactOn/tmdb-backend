@@ -11,9 +11,11 @@ const movieDetailChart = async (req, res) => {
     currentDate.getMonth(),
     currentDate.getDate()
   );
+
   const releaseCounts = await chartModel.movieDetailChart(
     genres_id,
-    threeYearsAgo
+    threeYearsAgo,
+    currentDate
   );
 
   sendResponse(res, StatusCodes.OK, {

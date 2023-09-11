@@ -5,7 +5,6 @@ const fetchData = async () => {
   const endPoint = `${config.tmdb_service.api_url}genre/movie/list?language=en`;
   const response = await fetch(endPoint, config.tmdb_service.options);
   const data = await response.json();
-  console.log({ data });
   return data.genres;
 };
 
