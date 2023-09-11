@@ -31,12 +31,11 @@ const pagination = async (req, res) => {
     vote_count_gte,
     vote_count_lte,
     genre_ids,
-    cursor,
   } = req.query;
   const newSortBy = sort_by.split(".");
   const limit = 20;
   const response = await movieModel.pagination(
-    cursor,
+    page,
     limit,
     newSortBy,
     release_date_gte,
