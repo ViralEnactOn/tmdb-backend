@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const sendResponse = require("../config/responseUtil");
+const sendResponse = require("./config/responseUtil");
 
 const {
   movieRoutes,
@@ -11,13 +11,17 @@ const {
   chartRoutes,
   ratingRoutes,
   commentRoutes,
-} = require("../routes");
+} = require("./routes");
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+app.use("/ping", async (req, res) => {
+  res.send("Version 1.0.0");
+});
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
